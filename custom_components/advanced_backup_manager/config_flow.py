@@ -10,15 +10,20 @@ from aiohasupervisor.models.mounts import MountState, MountUsage
 from .const import *
 from .models import validate_profile
 
+_WEEKDAY_NAMES = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+
 def _schema(defaults: dict[str, Any], addons: list[tuple[str, str]], locations: list[tuple[str, str]]) -> vol.Schema:
     """Build one native HA form; all schedule-specific values are retained."""
     d = lambda key, fallback=None: defaults.get(key, fallback)
+    weekday_defaults = [str(day) for day in d(CONF_WEEKDAYS, [])]
     return vol.Schema({
         vol.Required(CONF_PROFILE_NAME, default=d(CONF_PROFILE_NAME, "")): selector.TextSelector(),
         vol.Required(CONF_BACKUP_TYPE, default=d(CONF_BACKUP_TYPE, BACKUP_PARTIAL)): selector.SelectSelector(selector.SelectSelectorConfig(options=[BACKUP_PARTIAL, BACKUP_FULL], mode=selector.SelectSelectorMode.DROPDOWN)),
         vol.Required(CONF_SCHEDULE, default=d(CONF_SCHEDULE, SCHEDULE_DAILY)): selector.SelectSelector(selector.SelectSelectorConfig(options=[SCHEDULE_DAILY, SCHEDULE_WEEKDAYS, SCHEDULE_INTERVAL])),
         vol.Required(CONF_TIME, default=d(CONF_TIME, "03:00")): selector.TimeSelector(),
-        vol.Optional(CONF_WEEKDAYS, default=d(CONF_WEEKDAYS, [])): selector.SelectSelector(selector.SelectSelectorConfig(options=[{"value": i, "label": name} for i, name in enumerate(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])], multiple=True)),
+        # SelectSelector option values must be strings. Values are converted back
+        # to weekday numbers by validate_profile before storing the profile.
+        vol.Optional(CONF_WEEKDAYS, default=weekday_defaults): selector.SelectSelector(selector.SelectSelectorConfig(options=[{"value": str(i), "label": name} for i, name in enumerate(_WEEKDAY_NAMES)], multiple=True)),
         vol.Optional(CONF_INTERVAL_DAYS, default=d(CONF_INTERVAL_DAYS, 3)): selector.NumberSelector(selector.NumberSelectorConfig(min=1, max=366, step=1, mode=selector.NumberSelectorMode.BOX)),
         vol.Optional(CONF_ANCHOR_DATE, default=d(CONF_ANCHOR_DATE, date.today().isoformat())): selector.DateSelector(),
         vol.Required(CONF_RETENTION, default=d(CONF_RETENTION, 3)): selector.NumberSelector(selector.NumberSelectorConfig(min=1, max=365, step=1, mode=selector.NumberSelectorMode.BOX)),
