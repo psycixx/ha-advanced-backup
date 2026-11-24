@@ -2,36 +2,64 @@
   "config": {
     "step": {
       "user": {
-        "title": "Backup-Profil hinzufügen",
-        "description": "Erstellt ein unabhängiges lokales Supervisor-Backup-Profil.",
+        "title": "Backup-Profil erstellen",
+        "description": "Zuerst die grundlegenden Profileinstellungen auswählen. Im nächsten Schritt werden nur die zum Zeitplan passenden Felder angezeigt.",
         "data": {
           "profile_name": "Profilname",
           "backup_type": "Backuptyp",
-          "schedule": "Zeitplan",
+          "schedule": "Zeitplan"
+        },
+        "data_description": {
+          "profile_name": "Ein gut erkennbarer Name, zum Beispiel „Tägliches NAS-Backup“.",
+          "backup_type": "Vollständig sichert alle unterstützten Daten. Partiell erlaubt die Auswahl von Home Assistant und Add-ons.",
+          "schedule": "Täglich läuft jeden Tag. Wöchentlich läuft an einem gewählten Wochentag. Intervall läuft alle N Tage ab einem gewählten Datum."
+        }
+      },
+      "details": {
+        "title": "Backup-Details konfigurieren",
+        "description": "Es werden nur die für den zuvor gewählten Zeitplan relevanten Einstellungen angezeigt.",
+        "data": {
           "time": "Uhrzeit",
-          "weekdays": "Wochentage",
+          "weekdays": "Wochentag",
           "interval_days": "Alle N Tage",
-          "anchor_date": "Stichtag des Intervalls",
+          "anchor_date": "Startdatum des Intervalls",
           "retention": "Anzahl aufzubewahrender Backups",
+          "location": "Backup-Speicherort",
           "addon_mode": "Auswahlmodus für Add-ons",
           "addons": "Add-ons",
           "include_homeassistant": "Home Assistant einschließen",
           "exclude_database": "Datenbank ausschließen",
           "password": "Passwort zur Backup-Verschlüsselung",
-          "location": "Backup-Speicherort",
           "notify_success": "Bei Erfolg benachrichtigen",
           "notify_failure": "Bei Fehler benachrichtigen"
+        },
+        "data_description": {
+          "time": "Die lokale Uhrzeit, zu der geplante Backups starten.",
+          "weekdays": "Der eine Wochentag, an dem das wöchentliche Backup startet.",
+          "interval_days": "Anzahl der Tage zwischen zwei Intervall-Backups.",
+          "anchor_date": "Das Datum, ab dem das Intervall berechnet wird.",
+          "retention": "Es wird nur diese Anzahl bestätigter Backups dieses Profils behalten. Mindestens ein bestätigtes Backup bleibt immer erhalten.",
+          "location": "Lokaler Speicher oder ein aktiver Supervisor-Backup-Mount, etwa ein NAS-Speicherort.",
+          "addon_mode": "Nur die ausgewählten Add-ons einschließen oder alle installierten Add-ons außer den ausgewählten einschließen.",
+          "addons": "Die Add-ons, die abhängig vom Auswahlmodus ein- oder ausgeschlossen werden.",
+          "include_homeassistant": "Bei einem partiellen Backup die Home-Assistant-Konfiguration und Daten einschließen.",
+          "exclude_database": "Die Recorder-Datenbank nicht sichern. Nur bei partiellen Backups verfügbar.",
+          "password": "Optionales Passwort, mit dem Supervisor das Backup verschlüsselt. Es wird nach dem Speichern nicht erneut angezeigt.",
+          "notify_success": "Bei erfolgreichem Abschluss dieses Profils eine dauerhafte Home-Assistant-Benachrichtigung erstellen.",
+          "notify_failure": "Wenn ein Lauf geprüft werden muss, eine dauerhafte Home-Assistant-Benachrichtigung erstellen."
         }
       }
     },
     "error": {
       "profile_name_required": "Ein Profilname ist erforderlich.",
+      "invalid_backup_type": "Einen gültigen Backuptyp auswählen.",
       "invalid_time": "Bitte eine gültige Uhrzeit eingeben.",
-      "invalid_schedule": "Ungültiger Zeitplan.",
-      "invalid_weekdays": "Mindestens einen Wochentag auswählen.",
-      "invalid_interval": "Gültiges Intervall und Stichtag eingeben.",
+      "invalid_schedule": "Einen gültigen Zeitplan auswählen.",
+      "invalid_weekdays": "Genau einen Wochentag auswählen.",
+      "invalid_interval": "Gültiges Intervall und Startdatum eingeben.",
       "invalid_retention": "Die Aufbewahrung muss zwischen 1 und 365 liegen.",
       "invalid_password": "Das Passwort muss Text sein.",
+      "invalid_addon_mode": "Einen gültigen Auswahlmodus für Add-ons auswählen.",
       "database_requires_homeassistant": "Die Datenbank kann nur mit Home Assistant eingeschlossen werden."
     }
   },
@@ -39,23 +67,50 @@
     "step": {
       "init": {
         "title": "Backup-Profil bearbeiten",
+        "description": "Grundlegende Profileinstellungen ändern. Der nächste Schritt passt sich an den gewählten Zeitplan an.",
         "data": {
           "profile_name": "Profilname",
           "backup_type": "Backuptyp",
-          "schedule": "Zeitplan",
+          "schedule": "Zeitplan"
+        },
+        "data_description": {
+          "profile_name": "Ein gut erkennbarer Name, zum Beispiel „Tägliches NAS-Backup“.",
+          "backup_type": "Vollständig sichert alle unterstützten Daten. Partiell erlaubt die Auswahl von Home Assistant und Add-ons.",
+          "schedule": "Täglich läuft jeden Tag. Wöchentlich läuft an einem gewählten Wochentag. Intervall läuft alle N Tage ab einem gewählten Datum."
+        }
+      },
+      "details": {
+        "title": "Backup-Details bearbeiten",
+        "description": "Es werden nur die für den gewählten Zeitplan relevanten Einstellungen angezeigt.",
+        "data": {
           "time": "Uhrzeit",
-          "weekdays": "Wochentage",
+          "weekdays": "Wochentag",
           "interval_days": "Alle N Tage",
-          "anchor_date": "Stichtag des Intervalls",
+          "anchor_date": "Startdatum des Intervalls",
           "retention": "Anzahl aufzubewahrender Backups",
+          "location": "Backup-Speicherort",
           "addon_mode": "Auswahlmodus für Add-ons",
           "addons": "Add-ons",
           "include_homeassistant": "Home Assistant einschließen",
           "exclude_database": "Datenbank ausschließen",
-          "password": "Neues Verschlüsselungspasswort (leer lässt es unverändert)",
-          "location": "Backup-Speicherort",
+          "password": "Neues Passwort zur Backup-Verschlüsselung",
           "notify_success": "Bei Erfolg benachrichtigen",
           "notify_failure": "Bei Fehler benachrichtigen"
+        },
+        "data_description": {
+          "time": "Die lokale Uhrzeit, zu der geplante Backups starten.",
+          "weekdays": "Der eine Wochentag, an dem das wöchentliche Backup startet.",
+          "interval_days": "Anzahl der Tage zwischen zwei Intervall-Backups.",
+          "anchor_date": "Das Datum, ab dem das Intervall berechnet wird.",
+          "retention": "Es wird nur diese Anzahl bestätigter Backups dieses Profils behalten. Mindestens ein bestätigtes Backup bleibt immer erhalten.",
+          "location": "Lokaler Speicher oder ein aktiver Supervisor-Backup-Mount, etwa ein NAS-Speicherort.",
+          "addon_mode": "Nur die ausgewählten Add-ons einschließen oder alle installierten Add-ons außer den ausgewählten einschließen.",
+          "addons": "Die Add-ons, die abhängig vom Auswahlmodus ein- oder ausgeschlossen werden.",
+          "include_homeassistant": "Bei einem partiellen Backup die Home-Assistant-Konfiguration und Daten einschließen.",
+          "exclude_database": "Die Recorder-Datenbank nicht sichern. Nur bei partiellen Backups verfügbar.",
+          "password": "Leer lassen, um das gespeicherte Passwort beizubehalten.",
+          "notify_success": "Bei erfolgreichem Abschluss dieses Profils eine dauerhafte Home-Assistant-Benachrichtigung erstellen.",
+          "notify_failure": "Wenn ein Lauf geprüft werden muss, eine dauerhafte Home-Assistant-Benachrichtigung erstellen."
         }
       }
     }
