@@ -29,7 +29,7 @@ def validate_profile(data: dict[str, Any]) -> dict[str, Any]:
             weekdays = {int(day) for day in weekday_values}
         except (TypeError, ValueError) as err:
             raise ValueError("invalid_weekdays") from err
-        if len(weekdays) != 1 or not weekdays <= set(range(7)):
+        if not weekdays or not weekdays <= set(range(7)):
             raise ValueError("invalid_weekdays")
         result[CONF_WEEKDAYS] = sorted(weekdays)
     if schedule == SCHEDULE_INTERVAL:
