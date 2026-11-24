@@ -37,6 +37,9 @@ def validate_profile(data: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("invalid_retention")
     result[CONF_RETENTION] = retention
     result[CONF_ADDONS] = sorted(set(result.get(CONF_ADDONS, [])))
+    result[CONF_LOCATION] = str(result.get(CONF_LOCATION, ".local")) or ".local"
+    result[CONF_NOTIFY_SUCCESS] = bool(result.get(CONF_NOTIFY_SUCCESS, False))
+    result[CONF_NOTIFY_FAILURE] = bool(result.get(CONF_NOTIFY_FAILURE, True))
     password = result.get(CONF_PASSWORD)
     if password is not None and not isinstance(password, str):
         raise ValueError("invalid_password")
