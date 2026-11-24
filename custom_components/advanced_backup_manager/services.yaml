@@ -1,0 +1,23 @@
+run:
+  name: Backup ausführen
+  description: Führt ein Profil sofort aus; nur Administratoren sollten diesen Dienst aufrufen.
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text:
+resolve_uncertain:
+  name: Unklaren Lauf bestätigen
+  description: Entfernt die Schutzsperre erst nach manueller Prüfung im Supervisor.
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text:
+    outcome:
+      required: true
+      selector:
+        select:
+          options:
+            - no_backup_created
+            - backup_exists

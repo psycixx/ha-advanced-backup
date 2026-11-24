@@ -1,0 +1,37 @@
+"""Constants for Advanced Backup Manager."""
+from typing import Final
+
+DOMAIN: Final = "advanced_backup_manager"
+PLATFORMS: Final = ["sensor"]
+DATA_RUNNER: Final = "runner"
+STORAGE_KEY: Final = f"{DOMAIN}.state"
+STORAGE_VERSION: Final = 1
+EVENT_BACKUP_COMPLETED: Final = f"{DOMAIN}_completed"
+EVENT_BACKUP_FAILED: Final = f"{DOMAIN}_failed"
+ATTR_ENTRY_ID: Final = "entry_id"
+ATTR_PROFILE_NAME: Final = "profile_name"
+ATTR_BACKUP_ID: Final = "backup_id"
+
+CONF_PROFILE_NAME: Final = "profile_name"
+CONF_BACKUP_TYPE: Final = "backup_type"
+CONF_TIME: Final = "time"
+CONF_SCHEDULE: Final = "schedule"
+CONF_WEEKDAYS: Final = "weekdays"
+CONF_INTERVAL_DAYS: Final = "interval_days"
+CONF_ANCHOR_DATE: Final = "anchor_date"
+CONF_RETENTION: Final = "retention"
+CONF_ADDON_MODE: Final = "addon_mode"
+CONF_ADDONS: Final = "addons"
+CONF_INCLUDE_HOMEASSISTANT: Final = "include_homeassistant"
+CONF_EXCLUDE_DATABASE: Final = "exclude_database"
+CONF_PASSWORD: Final = "password"
+
+BACKUP_FULL: Final = "full"
+BACKUP_PARTIAL: Final = "partial"
+SCHEDULE_DAILY: Final = "daily"
+SCHEDULE_WEEKDAYS: Final = "weekdays"
+SCHEDULE_INTERVAL: Final = "interval"
+ADDON_INCLUDE: Final = "include"
+ADDON_EXCLUDE: Final = "exclude"
+SERVICE_RUN: Final = "run"
+SERVICE_RESOLVE_UNCERTAIN: Final = "resolve_uncertain"
