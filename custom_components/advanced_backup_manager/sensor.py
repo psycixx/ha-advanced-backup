@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from homeassistant.components.sensor import SensorEntity
+from homeassistant.core import callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
@@ -39,7 +40,13 @@ class ProfileStatusSensor(SensorEntity):
         self._entry = entry
         self._runner = hass.data[DOMAIN]["runner"]
         self._attr_unique_id = f"{entry.entry_id}_status"
-        self._unsub = self._runner.add_listener(self.async_write_ha_state)
+        self._unsub = self._runner.add_listener(self._handle_runner_update)
+
+    @callback
+    def _handle_runner_update(self) -> None:
+        """Write state only after Home Assistant has registered the entity."""
+        if self.hass is not None:
+            self.async_write_ha_state()
 
     @property
     def native_value(self):
