@@ -4,7 +4,7 @@ import asyncio
 from datetime import datetime
 import logging
 from typing import Any
-from aiohasupervisor.models.backups import AddonSet, FullBackupOptions, PartialBackupOptions
+from aiohasupervisor.models.backups import AddonSet, FullBackupOptions, PartialBackupOptions, RemoveBackupOptions
 from homeassistant.components import persistent_notification
 from homeassistant.components.hassio.handler import get_supervisor_client
 from homeassistant.core import HomeAssistant, callback
@@ -88,7 +88,7 @@ class BackupRunner:
                     raise HomeAssistantError("Supervisor returned no completed backup ID")
                 # A returned slug alone is not sufficient evidence; request the completed details.
                 details = await self.client.backups.backup_info(backup.slug)
-                record = {"slug": details.slug, "created_at": details.date.isoformat(), "type": str(details.type)}
+                record = {"slug": details.slug, "created_at": details.date.isoformat(), "type": str(details.type), "location": profile_data[CONF_LOCATION]}
                 profile["records"].append(record)
                 profile["last_result"] = {"status": "success", "backup_id": details.slug, "at": dt_util.utcnow().isoformat()}
                 if scheduled_date:
@@ -155,7 +155,7 @@ class BackupRunner:
         for record in records[max(1, retention):]:
             try:
                 await self.client.backups.backup_info(record["slug"])
-                await self.client.backups.remove_backup(record["slug"])
+                await self.client.backups.remove_backup(\n                    record["slug"],\n                    options=RemoveBackupOptions(location={record.get("location", ".local")}),\n                )
             except Exception as err:
                 _LOGGER.warning("Retention left backup %s untouched: %s", record["slug"], err)
                 continue
