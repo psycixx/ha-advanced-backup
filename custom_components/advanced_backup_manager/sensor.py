@@ -77,7 +77,7 @@ class ProfileStatusSensor(SensorEntity):
             "backup_type": profile.get(CONF_BACKUP_TYPE),
             "schedule": profile.get(CONF_SCHEDULE),
             "time": profile.get(CONF_TIME),
-            "weekday": (profile.get(CONF_WEEKDAYS) or [None])[0],
+            "weekdays": profile.get(CONF_WEEKDAYS, []),
             "interval_days": profile.get(CONF_INTERVAL_DAYS),
             "anchor_date": profile.get(CONF_ANCHOR_DATE),
             "location": profile.get(CONF_LOCATION),
@@ -128,8 +128,8 @@ class PlanConfigurationSensor(SensorEntity):
         if schedule == SCHEDULE_DAILY:
             return f"daily at {run_time}"
         if schedule == SCHEDULE_WEEKDAYS:
-            weekday = (profile.get(CONF_WEEKDAYS) or [None])[0]
-            return f"weekly on weekday {weekday} at {run_time}"
+            weekdays = ", ".join(str(day) for day in profile.get(CONF_WEEKDAYS, []))
+            return f"selected weekdays {weekdays} at {run_time}"
         return f"every {profile.get(CONF_INTERVAL_DAYS)} days at {run_time}"
 
     @property
@@ -142,7 +142,7 @@ class PlanConfigurationSensor(SensorEntity):
             "retention": profile.get(CONF_RETENTION),
             "schedule": profile.get(CONF_SCHEDULE),
             "time": profile.get(CONF_TIME),
-            "weekday": (profile.get(CONF_WEEKDAYS) or [None])[0],
+            "weekdays": profile.get(CONF_WEEKDAYS, []),
             "interval_days": profile.get(CONF_INTERVAL_DAYS),
             "anchor_date": profile.get(CONF_ANCHOR_DATE),
             "notifications_enabled": {
@@ -194,7 +194,8 @@ class PlanScheduleSensor(_PlanSettingSensor):
         if profile.get(CONF_SCHEDULE) == SCHEDULE_DAILY:
             return f"daily at {profile.get(CONF_TIME)}"
         if profile.get(CONF_SCHEDULE) == SCHEDULE_WEEKDAYS:
-            return f"weekly on weekday {(profile.get(CONF_WEEKDAYS) or [None])[0]} at {profile.get(CONF_TIME)}"
+            weekdays = ", ".join(str(day) for day in profile.get(CONF_WEEKDAYS, []))
+            return f"selected weekdays ${weekdays} at {profile.get(CONF_TIME)}"
         return f"every {profile.get(CONF_INTERVAL_DAYS)} days at {profile.get(CONF_TIME)}"
 
 
