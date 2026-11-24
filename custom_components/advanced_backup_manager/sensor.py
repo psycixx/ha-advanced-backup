@@ -22,6 +22,8 @@ from .const import (
     CONF_TIME,
     CONF_WEEKDAYS,
     DOMAIN,
+    SCHEDULE_DAILY,
+    SCHEDULE_WEEKDAYS,
 )
 
 
@@ -100,7 +102,6 @@ class PlanConfigurationSensor(SensorEntity):
         self._runner = hass.data[DOMAIN]["runner"]
         self._attr_name = f"{entry.title} configuration"
         self._attr_unique_id = f"{entry.entry_id}_configuration"
-        from .device import device_info
         self._attr_device_info = device_info(entry)
         self._unsub = self._runner.add_listener(self._handle_runner_update)
 
