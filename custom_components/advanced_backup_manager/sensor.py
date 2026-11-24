@@ -29,7 +29,15 @@ from .const import (
 
 async def async_setup_entry(hass, entry, async_add_entities: AddEntitiesCallback) -> None:
     """Add one status sensor for the backup profile."""
-    async_add_entities([ProfileStatusSensor(hass, entry), PlanConfigurationSensor(hass, entry)])
+    async_add_entities([
+        ProfileStatusSensor(hass, entry),
+        PlanConfigurationSensor(hass, entry),
+        PlanScheduleSensor(hass, entry),
+        PlanStorageSensor(hass, entry),
+        PlanRetentionSensor(hass, entry),
+        PlanBackupTypeSensor(hass, entry),
+        PlanManagedBackupsSensor(hass, entry),
+    ])
 
 
 class ProfileStatusSensor(SensorEntity):
@@ -146,3 +154,94 @@ class PlanConfigurationSensor(SensorEntity):
     async def async_will_remove_from_hass(self) -> None:
         """Unsubscribe from runner updates."""
         self._unsub()
+
+
+class _PlanSettingSensor(SensorEntity):
+    """Base entity for a single visible backup-plan setting."""
+
+    _attr_has_entity_name = True
+
+    def __init__(self, hass, entry, suffix: str, name: str, icon: str) -> None:
+        self._entry = entry
+        self._runner = hass.data[DOMAIN]["runner"]
+        self._attr_unique_id = f"{entry.entry_id}_{suffix}"
+        self._attr_name = f"{entry.title} {name}"
+        self._attr_icon = icon
+        self._attr_device_info = device_info(entry)
+        self._unsub = self._runner.add_listener(self._handle_runner_update)
+
+    def _profile(self):
+        return dict(self._entry.data) | dict(self._entry.options)
+
+    @callback
+    def _handle_runner_update(self) -> None:
+        if self.hass is not None:
+            self.async_write_ha_state()
+
+    async def async_will_remove_from_hass(self) -> None:
+        self._unsub()
+
+
+class PlanScheduleSensor(_PlanSettingSensor):
+    """Expose the plan's readable schedule."""
+
+    def __init__(self, hass, entry) -> None:
+        super().__init__(hass, entry, "schedule", "schedule", "mdi:calendar-clock")
+
+    @property
+    def native_value(self) -> str:
+        profile = self._profile()
+        if profile.get(CONF_SCHEDULE) == SCHEDULE_DAILY:
+            return f"daily at {profile.get(CONF_TIME)}"
+        if profile.get(CONF_SCHEDULE) == SCHEDULE_WEEKDAYS:
+            return f"weekly on weekday {(profile.get(CONF_WEEKDAYS) or [None])[0]} at {profile.get(CONF_TIME)}"
+        return f"every {profile.get(CONF_INTERVAL_DAYS)} days at {profile.get(CONF_TIME)}"
+
+
+class PlanStorageSensor(_PlanSettingSensor):
+    """Expose the selected storage location."""
+
+    def __init__(self, hass, entry) -> None:
+        super().__init__(hass, entry, "storage", "storage location", "mdi:folder-network")
+
+    @property
+    def native_value(self):
+        return self._profile().get(CONF_LOCATION)
+
+
+class PlanRetentionSensor(_PlanSettingSensor):
+    """Expose the configured retention count."""
+
+    _attr_native_unit_of_measurement = "backups"
+
+    def __init__(self, hass, entry) -> None:
+        super().__init__(hass, entry, "retention", "retention", "mdi:delete-clock")
+
+    @property
+    def native_value(self):
+        return self._profile().get(CONF_RETENTION)
+
+
+class PlanBackupTypeSensor(_PlanSettingSensor):
+    """Expose whether this is a full or partial backup plan."""
+
+    def __init__(self, hass, entry) -> None:
+        super().__init__(hass, entry, "backup_type", "backup type", "mdi:archive")
+
+    @property
+    def native_value(self):
+        return self._profile().get(CONF_BACKUP_TYPE)
+
+
+class PlanManagedBackupsSensor(_PlanSettingSensor):
+    """Expose how many confirmed backups this plan currently manages."""
+
+    _attr_native_unit_of_measurement = "backups"
+    _attr_icon = "mdi:archive-check"
+
+    def __init__(self, hass, entry) -> None:
+        super().__init__(hass, entry, "managed_backups", "managed backups", "mdi:archive-check")
+
+    @property
+    def native_value(self):
+        return len(self._runner.profile_state(self._entry.entry_id).get("records", []))
