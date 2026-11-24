@@ -5,6 +5,7 @@ from homeassistant.components.button import ButtonEntity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
+from .device import device_info
 
 
 async def async_setup_entry(hass, entry, async_add_entities: AddEntitiesCallback) -> None:
@@ -23,6 +24,7 @@ class RunBackupButton(ButtonEntity):
         self._entry = entry
         self._runner = hass.data[DOMAIN]["runner"]
         self._attr_unique_id = f"{entry.entry_id}_run"
+        self._attr_device_info = device_info(entry)
 
     async def async_press(self) -> None:
         """Run the profile with the same safety checks as scheduled execution."""
