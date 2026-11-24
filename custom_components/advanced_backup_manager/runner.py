@@ -75,11 +75,14 @@ class BackupRunner:
             raise HomeAssistantError("Unknown backup profile")
         async with self.lock:
             profile = self.profile_state(entry_id)
+            profile_data = self._profile_data(entry)
+            # Fetching add-on inventory and validating options cannot create a
+            # backup, so do it before persisting an intent.
+            backup_options = await self._async_build_options(profile_data)
             self.state["intent"] = {"entry_id": entry_id, "started_at": dt_util.utcnow().isoformat(), "scheduled_date": scheduled_date}
             await self._save()  # durable before the potentially side-effecting request
             try:
-                profile_data = self._profile_data(entry)
-                backup = await self._async_create(profile_data)
+                backup = await self._async_create(backup_options)
                 if not backup.slug:
                     raise HomeAssistantError("Supervisor returned no completed backup ID")
                 # A returned slug alone is not sufficient evidence; request the completed details.
@@ -103,21 +106,39 @@ class BackupRunner:
                 self._notify()
                 raise
 
-    async def _async_create(self, data: dict[str, Any]):
+    async def _async_build_options(
+        self, data: dict[str, Any]
+    ) -> FullBackupOptions | PartialBackupOptions:
+        """Build validated options without making a side-effecting API call."""
         name = f"ABM {data[CONF_PROFILE_NAME]} {dt_util.now().strftime('%Y-%m-%d %H:%M')}"
         common = {"name": name, "location": ".local", "background": False}
         if password := data.get(CONF_PASSWORD):
             common["password"] = password
         if data[CONF_BACKUP_TYPE] == BACKUP_FULL:
-            # Be explicit: a profile called "full" must never inherit a future
-            # Supervisor default that excludes the database.
-            return await self.client.backups.full_backup(FullBackupOptions(**common, homeassistant_exclude_database=False))
+            # A full backup must never inherit a future database-excluding default.
+            return FullBackupOptions(**common, homeassistant_exclude_database=False)
+
         installed = {addon.slug for addon in await self.client.addons.list()}
         chosen = set(data[CONF_ADDONS])
-        addons: AddonSet | set[str]
         addons = chosen & installed if data[CONF_ADDON_MODE] == ADDON_INCLUDE else installed - chosen
-        # Include HA by default; the model rejects an empty partial selection.
-        return await self.client.backups.partial_backup(PartialBackupOptions(**common, addons=addons or None, homeassistant=data[CONF_INCLUDE_HOMEASSISTANT], homeassistant_exclude_database=data[CONF_EXCLUDE_DATABASE]))
+        if not addons and not data[CONF_INCLUDE_HOMEASSISTANT]:
+            raise HomeAssistantError(
+                "Partial backup has neither Home Assistant nor an installed add-on to include"
+            )
+        return PartialBackupOptions(
+            **common,
+            addons=addons or None,
+            homeassistant=data[CONF_INCLUDE_HOMEASSISTANT],
+            homeassistant_exclude_database=data[CONF_EXCLUDE_DATABASE],
+        )
+
+    async def _async_create(
+        self, options: FullBackupOptions | PartialBackupOptions
+    ):
+        """Start the backup only after its durable intent has been saved."""
+        if isinstance(options, PartialBackupOptions):
+            return await self.client.backups.partial_backup(options)
+        return await self.client.backups.full_backup(options)
 
     @staticmethod
     def _profile_data(entry: Any) -> dict[str, Any]:
