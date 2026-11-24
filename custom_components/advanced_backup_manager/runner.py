@@ -231,7 +231,11 @@ class BackupRunner:
             "location": data[CONF_LOCATION],
             "background": False,
         }
-        # A legacy per-profile password is used only until a shared code exists.\n        password = self.encryption_password() or data.get(CONF_PASSWORD)\n        if password:\n            common["password"] = password\n        if data[CONF_BACKUP_TYPE] == BACKUP_FULL:
+        # A legacy per-profile password is used only until a shared code exists.
+        password = self.encryption_password() or data.get(CONF_PASSWORD)
+        if password:
+            common["password"] = password
+        if data[CONF_BACKUP_TYPE] == BACKUP_FULL:
             return FullBackupOptions(
                 **common, homeassistant_exclude_database=False
             )
