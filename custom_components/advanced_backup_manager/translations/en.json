@@ -17,7 +17,7 @@
       },
       "details": {
         "title": "Configure backup details",
-        "description": "Only settings relevant to the schedule selected in the previous step are shown. After saving, use the “Run backup now” button to test the profile and selected storage location.",
+        "description": "Only settings relevant to the schedule selected in the previous step are shown. After saving, use the “Run backup now” button to test the profile and selected storage location. Backups use the encryption key configured in Settings → System → Backups; configure that key before running this plan.",
         "data": {
           "time": "Time",
           "weekdays": "Weekday",
