@@ -68,17 +68,9 @@
   "options": {
     "step": {
       "init": {
-        "title": "Edit backup profile",
-        "description": "Change the basic profile settings. The next step adapts to the selected schedule.",
-        "data": {
-          "profile_name": "Profile name",
-          "backup_type": "Backup type",
-          "schedule": "Schedule"
-        },
-        "data_description": {
-          "profile_name": "A recognizable name, such as “Daily NAS backup”.",
-          "backup_type": "Full includes all supported data. Partial lets you choose Home Assistant and add-ons.",
-          "schedule": "Daily runs every day. Weekly runs on one selected weekday. Interval runs every N days from a chosen date."
+        "menu_options": {
+          "profile": "Edit backup plan",
+          "encryption": "Shared encryption"
         }
       },
       "details": {
@@ -112,7 +104,36 @@
           "notify_success": "Create a persistent Home Assistant notification when this profile finishes successfully.",
           "notify_failure": "Create a persistent Home Assistant notification when a run needs attention."
         }
+      },
+      "profile": {
+        "title": "Edit backup profile",
+        "description": "Change the basic profile settings. The next step adapts to the selected schedule.",
+        "data": {
+          "profile_name": "Profile name",
+          "backup_type": "Backup type",
+          "schedule": "Schedule"
+        },
+        "data_description": {
+          "profile_name": "A recognizable name, such as “Daily NAS backup”.",
+          "backup_type": "Full includes all supported data. Partial lets you choose Home Assistant and add-ons.",
+          "schedule": "Daily runs every day. Weekly runs on one selected weekday. Interval runs every N days from a chosen date."
+        }
+      },
+      "encryption": {
+        "title": "Set or rotate shared encryption",
+        "description": "Generate automatically or enter a code used by every backup plan.",
+        "data": {
+          "encryption_mode": "Method",
+          "password": "Custom encryption code"
+        },
+        "data_description": {
+          "encryption_mode": "Generate creates a new secure code. Manual stores the entered code for all future backups.",
+          "password": "Required only for Manual."
+        }
       }
+    },
+    "abort": {
+      "encryption_updated": "The shared encryption code was updated."
     }
   }
 }
