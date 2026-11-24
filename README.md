@@ -5,18 +5,19 @@ Independent scheduled Supervisor backup profiles for Home Assistant OS/Supervise
 > [!IMPORTANT]
 > **Restart Home Assistant after installing or updating this integration in HACS.** New custom integrations and their configuration flows are loaded only during Home Assistant startup. Do not try to add the integration before the restart has completed.
 
-## Install through HACS
+## Install through Home Assistant Marketplace
 
-1. Open **HACS → Integrations → ⋮ → Custom repositories**.
-2. Add `https://github.com/psycixx/ha-advanced-backup` with category **Integration**.
-3. Find the repository in HACS and select **Download**.
-4. **Restart Home Assistant.**
-5. Add the integration under **Settings → Devices & services**.
+1. Open **Settings → Marketplace → ⋮ → Add from link**.
+2. Add `https://github.com/psycixx/ha-advanced-backup` as an **Integration**.
+3. Open the repository in Marketplace and install it.
+4. Restart Home Assistant, then add the integration under **Settings → Devices & services**.
+
+For Home Assistant versions before 2026.11, add the same URL as a custom repository in HACS.
 
 ## Features
 
 - Daily, interval, and freely selected-weekday schedules.
-- An interval starts from a chosen date and can represent weekly, monthly, or any other N-day cadence.
+- An interval starts from a chosen date and can represent weekly or other fixed N-day cadences (30 days does not mean the same calendar day each month).
 - Full or partial backups, add-on include/exclude, and optional database exclusion.
 - Per-profile retention: only confirmed backups created by that profile are pruned, and the newest confirmed one is always retained.
 - Choose local storage or any active Supervisor backup mount, including Network Storage Manager locations.
