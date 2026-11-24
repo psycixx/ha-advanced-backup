@@ -9,6 +9,7 @@ from aiohasupervisor.models.mounts import MountState, MountUsage
 from homeassistant import config_entries
 from homeassistant.components.hassio.handler import get_supervisor_client
 from homeassistant.helpers import selector
+from homeassistant.exceptions import HomeAssistantError
 
 from .const import *
 from .models import validate_profile
@@ -56,6 +57,7 @@ def _details_schema(
     defaults: dict[str, Any],
     addons: list[tuple[str, str]],
     locations: list[tuple[str, str]],
+    needs_encryption: bool = False,
 ) -> vol.Schema:
     """Build only the fields relevant to the selected schedule."""
     d = lambda key, fallback=None: defaults.get(key, fallback)
@@ -137,9 +139,23 @@ def _details_schema(
             vol.Required(
                 CONF_NOTIFY_FAILURE, default=d(CONF_NOTIFY_FAILURE, True)
             ): selector.BooleanSelector(),
-            # Stored passwords are deliberately never used as a form default.
-            vol.Optional(CONF_PASSWORD, default=""): selector.TextSelector(
-                selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
+            **(
+                {
+                    vol.Required(
+                        CONF_ENCRYPTION_MODE, default=ENCRYPTION_GENERATE
+                    ): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=[ENCRYPTION_GENERATE, ENCRYPTION_MANUAL]
+                        )
+                    ),
+                    vol.Optional(CONF_PASSWORD, default=""): selector.TextSelector(
+                        selector.TextSelectorConfig(
+                            type=selector.TextSelectorType.PASSWORD
+                        )
+                    ),
+                }
+                if needs_encryption
+                else {}
             ),
         }
     )
@@ -187,23 +203,31 @@ class AdvancedBackupManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Show only fields relevant to the selected schedule."""
         addons = await _addons(self.hass)
         locations = await _locations(self.hass)
+        runner = self.hass.data[DOMAIN][DATA_RUNNER]
+        needs_encryption = not runner.has_encryption_password
         if user_input is not None:
             data = self._profile_data | user_input
-            if not data.get(CONF_PASSWORD):
-                data.pop(CONF_PASSWORD, None)
+            encryption_mode = data.pop(CONF_ENCRYPTION_MODE, None)
+            password = data.pop(CONF_PASSWORD, None)
             try:
                 data = validate_profile(data)
-            except ValueError as err:
+                if needs_encryption:
+                    await runner.async_configure_encryption(encryption_mode, password)
+            except (ValueError, HomeAssistantError) as err:
                 return self.async_show_form(
                     step_id="details",
-                    data_schema=_details_schema(data, addons, locations),
+                    data_schema=_details_schema(
+                        data, addons, locations, needs_encryption
+                    ),
                     errors={"base": str(err)},
                 )
             return self.async_create_entry(title=data[CONF_PROFILE_NAME], data=data)
 
         return self.async_show_form(
             step_id="details",
-            data_schema=_details_schema(self._profile_data, addons, locations),
+            data_schema=_details_schema(
+                self._profile_data, addons, locations, needs_encryption
+            ),
         )
 
     @staticmethod
