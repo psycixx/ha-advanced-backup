@@ -1,8 +1,8 @@
-"""Constants for Advanced Backup Manager."""
+""""Constants for Advanced Backup Manager."""
 from typing import Final
 
 DOMAIN: Final = "advanced_backup_manager"
-PLATFORMS: Final = ["sensor"]
+PLATFORMS: Final = ["button", "sensor"]
 DATA_RUNNER: Final = "runner"
 STORAGE_KEY: Final = f"{DOMAIN}.state"
 STORAGE_VERSION: Final = 1
