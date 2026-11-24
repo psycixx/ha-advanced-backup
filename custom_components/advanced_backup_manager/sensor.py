@@ -27,7 +27,7 @@ from .const import (
 
 async def async_setup_entry(hass, entry, async_add_entities: AddEntitiesCallback) -> None:
     """Add one status sensor for the backup profile."""
-    async_add_entities([ProfileStatusSensor(hass, entry)])
+    async_add_entities([ProfileStatusSensor(hass, entry), PlanConfigurationSensor(hass, entry)])
 
 
 class ProfileStatusSensor(SensorEntity):
@@ -85,4 +85,63 @@ class ProfileStatusSensor(SensorEntity):
 
     async def async_will_remove_from_hass(self):
         """Unsubscribe from runner state changes."""
+        self._unsub()
+
+
+class PlanConfigurationSensor(SensorEntity):
+    """Expose one backup plan's readable schedule and key settings."""
+
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:calendar-clock"
+
+    def __init__(self, hass, entry) -> None:
+        """Initialize the plan configuration entity."""
+        self._entry = entry
+        self._runner = hass.data[DOMAIN]["runner"]
+        self._attr_name = f"{entry.title} configuration"
+        self._attr_unique_id = f"{entry.entry_id}_configuration"
+        from .device import device_info
+        self._attr_device_info = device_info(entry)
+        self._unsub = self._runner.add_listener(self._handle_runner_update)
+
+    @callback
+    def _handle_runner_update(self) -> None:
+        """Refresh when configuration-related state changes."""
+        if self.hass is not None:
+            self.async_write_ha_state()
+
+    @property
+    def native_value(self) -> str:
+        """Return a readable schedule summary."""
+        profile = dict(self._entry.data) | dict(self._entry.options)
+        schedule = profile.get(CONF_SCHEDULE)
+        run_time = profile.get(CONF_TIME)
+        if schedule == SCHEDULE_DAILY:
+            return f"daily at {run_time}"
+        if schedule == SCHEDULE_WEEKDAYS:
+            weekday = (profile.get(CONF_WEEKDAYS) or [None])[0]
+            return f"weekly on weekday {weekday} at {run_time}"
+        return f"every {profile.get(CONF_INTERVAL_DAYS)} days at {run_time}"
+
+    @property
+    def extra_state_attributes(self):
+        """Return safe plan settings for dashboards and automations."""
+        profile = dict(self._entry.data) | dict(self._entry.options)
+        return {
+            "backup_type": profile.get(CONF_BACKUP_TYPE),
+            "location": profile.get(CONF_LOCATION),
+            "retention": profile.get(CONF_RETENTION),
+            "schedule": profile.get(CONF_SCHEDULE),
+            "time": profile.get(CONF_TIME),
+            "weekday": (profile.get(CONF_WEEKDAYS) or [None])[0],
+            "interval_days": profile.get(CONF_INTERVAL_DAYS),
+            "anchor_date": profile.get(CONF_ANCHOR_DATE),
+            "notifications_enabled": {
+                "success": profile.get(CONF_NOTIFY_SUCCESS),
+                "failure": profile.get(CONF_NOTIFY_FAILURE),
+            },
+        }
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unsubscribe from runner updates."""
         self._unsub()
