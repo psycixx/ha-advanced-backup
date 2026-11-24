@@ -39,6 +39,7 @@ class ProfileStatusSensor(SensorEntity):
 
     def __init__(self, hass, entry) -> None:
         self._entry = entry
+        self._attr_name = f"{entry.title} backup status"
         self._runner = hass.data[DOMAIN]["runner"]
         self._attr_unique_id = f"{entry.entry_id}_status"
         self._attr_device_info = device_info(entry)
