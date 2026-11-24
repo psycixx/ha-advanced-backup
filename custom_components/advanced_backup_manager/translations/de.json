@@ -68,17 +68,9 @@
   "options": {
     "step": {
       "init": {
-        "title": "Backup-Profil bearbeiten",
-        "description": "Grundlegende Profileinstellungen ändern. Der nächste Schritt passt sich an den gewählten Zeitplan an.",
-        "data": {
-          "profile_name": "Profilname",
-          "backup_type": "Backuptyp",
-          "schedule": "Zeitplan"
-        },
-        "data_description": {
-          "profile_name": "Ein gut erkennbarer Name, zum Beispiel „Tägliches NAS-Backup“.",
-          "backup_type": "Vollständig sichert alle unterstützten Daten. Partiell erlaubt die Auswahl von Home Assistant und Add-ons.",
-          "schedule": "Täglich läuft jeden Tag. Wöchentlich läuft an einem gewählten Wochentag. Intervall läuft alle N Tage ab einem gewählten Datum."
+        "menu_options": {
+          "profile": "Backup-Plan bearbeiten",
+          "encryption": "Gemeinsame Verschlüsselung"
         }
       },
       "details": {
@@ -112,7 +104,36 @@
           "notify_success": "Bei erfolgreichem Abschluss dieses Profils eine dauerhafte Home-Assistant-Benachrichtigung erstellen.",
           "notify_failure": "Wenn ein Lauf geprüft werden muss, eine dauerhafte Home-Assistant-Benachrichtigung erstellen."
         }
+      },
+      "profile": {
+        "title": "Backup-Profil bearbeiten",
+        "description": "Grundlegende Profileinstellungen ändern. Der nächste Schritt passt sich an den gewählten Zeitplan an.",
+        "data": {
+          "profile_name": "Profilname",
+          "backup_type": "Backuptyp",
+          "schedule": "Zeitplan"
+        },
+        "data_description": {
+          "profile_name": "Ein gut erkennbarer Name, zum Beispiel „Tägliches NAS-Backup“.",
+          "backup_type": "Vollständig sichert alle unterstützten Daten. Partiell erlaubt die Auswahl von Home Assistant und Add-ons.",
+          "schedule": "Täglich läuft jeden Tag. Wöchentlich läuft an einem gewählten Wochentag. Intervall läuft alle N Tage ab einem gewählten Datum."
+        }
+      },
+      "encryption": {
+        "title": "Gemeinsame Verschlüsselung festlegen oder ändern",
+        "description": "Automatisch generieren oder einen Code eingeben, der für jeden Backup-Plan gilt.",
+        "data": {
+          "encryption_mode": "Vorgehensweise",
+          "password": "Eigener Verschlüsselungscode"
+        },
+        "data_description": {
+          "encryption_mode": "„Generieren“ erstellt einen sicheren neuen Code. „Manuell“ speichert den eingegebenen Code für alle künftigen Backups.",
+          "password": "Nur bei „Manuell“ erforderlich."
+        }
       }
+    },
+    "abort": {
+      "encryption_updated": "Der gemeinsame Verschlüsselungscode wurde aktualisiert."
     }
   }
 }
