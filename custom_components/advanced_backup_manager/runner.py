@@ -52,6 +52,15 @@ class BackupRunner:
             entry.entry_id,
             {"records": [], "last_scheduled_date": None, "last_result": None},
         )
+        if not self._encryption_key() and not self.state.get("intent"):
+            profile["last_result"] = {
+                "status": "configuration_error",
+                "error": (
+                    "Configure the Home Assistant backup encryption key before "
+                    "running an Advanced Backup Manager plan"
+                ),
+                "at": dt_util.utcnow().isoformat(),
+            }
         # A newly created plan must never "catch up" a time that already
         # elapsed today. Its first automatic run is the next upcoming slot.
         if is_new_profile and is_due(self._profile_data(entry), dt_util.now(), None):
@@ -76,6 +85,31 @@ class BackupRunner:
     def profile_state(self, entry_id: str) -> dict[str, Any]:
         return self.state["profiles"].get(entry_id, {})
 
+    def _encryption_key(self) -> str | None:
+        """Return Home Assistant's central backup encryption key, if configured."""
+        return async_get_manager(self.hass).config.data.create_backup.password or None
+
+    async def _record_encryption_configuration_error(
+        self, entry: Any, scheduled_date: str | None, *, notify: bool
+    ) -> None:
+        """Expose a missing central key without treating a backup as uncertain."""
+        profile = self.profile_state(entry.entry_id)
+        message = (
+            "Configure the Home Assistant backup encryption key before "
+            "running an Advanced Backup Manager plan"
+        )
+        profile["last_result"] = {
+            "status": "configuration_error",
+            "error": message,
+            "at": dt_util.utcnow().isoformat(),
+        }
+        if scheduled_date:
+            profile["last_scheduled_date"] = scheduled_date
+        await self._save()
+        if notify:
+            self._send_notification(profile_data := self._profile_data(entry), entry.title, message, success=False)
+        self._notify()
+
     async def _save(self) -> None:
         await self.store.async_save(self.state)
 
@@ -85,6 +119,11 @@ class BackupRunner:
             if is_due(
                 self._profile_data(entry), now, state.get("last_scheduled_date")
             ):
+                if not self._encryption_key():
+                    await self._record_encryption_configuration_error(
+                        entry, now.date().isoformat(), notify=True
+                    )
+                    continue
                 # A busy runner deliberately drops a scheduled trigger, rather than queueing it.
                 if not self.lock.locked():
                     self.hass.async_create_task(
@@ -114,6 +153,14 @@ class BackupRunner:
         async with self.lock:
             profile = self.profile_state(entry_id)
             profile_data = self._profile_data(entry)
+            if not self._encryption_key():
+                await self._record_encryption_configuration_error(
+                    entry, scheduled_date, notify=True
+                )
+                raise HomeAssistantError(
+                    "Configure the Home Assistant backup encryption key before "
+                    "running an Advanced Backup Manager plan"
+                )
             backup_options = await self._async_build_options(profile_data)
             self.state["intent"] = {
                 "entry_id": entry_id,
@@ -211,7 +258,7 @@ class BackupRunner:
         }
         # Use Home Assistant's central backup encryption key. It is managed
         # exclusively by the native Backup integration and its emergency kit.
-        password = async_get_manager(self.hass).config.data.create_backup.password
+        password = self._encryption_key()
         if not password:
             raise HomeAssistantError(
                 "Configure the Home Assistant backup encryption key before "
