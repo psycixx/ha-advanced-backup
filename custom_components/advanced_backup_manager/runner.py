@@ -47,10 +47,15 @@ class BackupRunner:
 
     async def async_add_entry(self, entry: Any) -> None:
         self.entries[entry.entry_id] = entry
-        self.state["profiles"].setdefault(
+        is_new_profile = entry.entry_id not in self.state["profiles"]
+        profile = self.state["profiles"].setdefault(
             entry.entry_id,
             {"records": [], "last_scheduled_date": None, "last_result": None},
         )
+        # A newly created plan must never "catch up" a time that already
+        # elapsed today. Its first automatic run is the next upcoming slot.
+        if is_new_profile and is_due(self._profile_data(entry), dt_util.now(), None):
+            profile["last_scheduled_date"] = dt_util.now().date().isoformat()
         await self._save()
         if self._unsub is None:
             self._unsub = async_track_time_change(
