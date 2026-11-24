@@ -1,44 +1,20 @@
 # Advanced Backup Manager
 
-Eine Home-Assistant-Custom-Integration fuer mehrere, unabhaengige Supervisor-Backup-Profile.
+Independent scheduled Supervisor backup profiles for Home Assistant OS/Supervised.
 
-## MVP installieren (nur HA OS / Supervisor)
+## Features
+- Daily, weekday, and calendar-anchored interval schedules.
+- Full or partial backups, add-on include/exclude, and optional database exclusion.
+- Per-profile retention: only confirmed backups created by that profile are pruned, and the newest confirmed one is always retained.
+- Choose local storage or any active Supervisor backup mount, including NAS Backup Storage locations.
+- Optional profile password and optional English system-wide success/failure notifications.
+- Global serialization and a deliberate manual-resolution lock for uncertain runs.
 
-1. Den Ordner `custom_components/advanced_backup_manager` nach
-   `<config>/custom_components/advanced_backup_manager` kopieren.
-2. Home Assistant neu starten.
-3. **Einstellungen → Geräte & Dienste → Integration hinzufügen → Advanced Backup
-   Manager**. Pro Profil einen Eintrag anlegen.
-4. Fuer den genannten Anwendungsfall zwei Profile anlegen: ein *Teilbackup* mit
-   `Datenbank ausschließen` sowie ein *Vollbackup* alle drei Tage. Ein Vollbackup
-   enthält immer die Datenbank.
+## Install and configure
+1. Install `custom_components/advanced_backup_manager` and restart Home Assistant.
+2. Add one integration entry per profile.
+3. Choose an active backup location, schedule, contents, and **Backups to retain**.
+4. Run the profile once manually and confirm it on **Settings → System → Backups** before enabling schedules.
 
-Optional kann jedes Profil ein eigenes Verschlüsselungspasswort erhalten. Dieses
-Passwort muss beim Wiederherstellen des jeweiligen Backups eingegeben werden.
-Das Passwortfeld bleibt bei späteren Bearbeitungen leer; leer lassen bedeutet,
-dass das vorhandene Passwort beibehalten wird.
-
-Nach der Einrichtung stehen pro Profil ein Statussensor und die Dienste
-`advanced_backup_manager.run` sowie `advanced_backup_manager.resolve_uncertain`
-zur Verfügung.
-
-## Sicherheitsmodell und Grenzen
-
-Die Integration nutzt ausschließlich den in HA authentifizierten Supervisor-Client.
-Sie funktioniert nicht mit Home Assistant Container oder Core. Backups werden im
-MVP nur am lokalen Supervisor-Speicherort (`.local`) erzeugt. Ein optionales
-profilbezogenes Supervisor-Passwort schützt ein Backup kryptografisch; es liegt
-für die automatische Ausführung in Home Assistants lokalem `.storage` vor.
-Wer Zugriff auf das HA-Konfigurationsdateisystem hat, ist deshalb als
-vertrauenswürdig zu behandeln. Es gibt keine Uploads, Wiederherstellungen oder
-Verwaltung fremder Backups.
-
-Vor dem API-Aufruf wird eine Ausführungsabsicht persistent gespeichert. Bricht HA
-während oder nach dem Aufruf ab oder kommt eine API-Antwort nicht eindeutig an,
-bleibt das Profil blockiert. Das ist absichtlich: erst im Supervisor prüfen, ob ein
-Backup entstanden ist, und dann den Status über `resolve_uncertain` bestätigen.
-Es werden nie automatische Wiederholungen ausgeführt. Auch fehlgeschlagene
-Ausführungen loesen keine Aufbewahrungsloeschung aus.
-
-Details und Testnachweise stehen in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-und [docs/TESTING.md](docs/TESTING.md).
+## Safety
+A possibly side-effecting Supervisor call first records a durable intent. If its outcome is uncertain, all further profile runs stop until an administrator inspects the Supervisor and calls `advanced_backup_manager.resolve_uncertain`. Passwords are not shown in later edits or sensors, but scheduled profiles must be stored in Home Assistant configuration storage. Test restoration before production use.
