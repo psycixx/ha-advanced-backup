@@ -17,7 +17,7 @@
       },
       "details": {
         "title": "Backup-Details konfigurieren",
-        "description": "Es werden nur die für den zuvor gewählten Zeitplan relevanten Einstellungen angezeigt. Nach dem Speichern wird empfohlen, das Profil mit der Schaltfläche „Jetzt sichern“ und dem gewählten Speicherort zu testen.",
+        "description": "Es werden nur die für den zuvor gewählten Zeitplan relevanten Einstellungen angezeigt. Nach dem Speichern wird empfohlen, das Profil mit der Schaltfläche „Jetzt sichern“ und dem gewählten Speicherort zu testen. Backups verwenden den unter Einstellungen → System → Backups eingerichteten Verschlüsselungscode; dieser muss vor dem ersten Lauf eingerichtet werden.",
         "data": {
           "time": "Uhrzeit",
           "weekdays": "Wochentag",
