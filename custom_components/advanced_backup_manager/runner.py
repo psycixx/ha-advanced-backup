@@ -122,6 +122,11 @@ class BackupRunner:
                         "Supervisor returned no completed backup ID"
                     )
                 details = await self.client.backups.backup_info(backup.slug)
+                if profile_data[CONF_LOCATION] not in details.location_attributes:
+                    raise HomeAssistantError(
+                        "Supervisor did not create the backup in the configured "
+                        f"location: {profile_data[CONF_LOCATION]}"
+                    )
                 record = {
                     "slug": details.slug,
                     "created_at": details.date.isoformat(),
