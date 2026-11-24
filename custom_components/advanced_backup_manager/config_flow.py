@@ -8,6 +8,7 @@ import voluptuous as vol
 from aiohasupervisor.models.mounts import MountState, MountUsage
 from homeassistant import config_entries
 from homeassistant.components.hassio.handler import get_supervisor_client
+from homeassistant.components.backup import async_get_manager
 from homeassistant.helpers import selector
 from homeassistant.exceptions import HomeAssistantError
 
@@ -180,6 +181,14 @@ async def _addons(hass) -> list[tuple[str, str]]:
         return []
 
 
+def _encryption_key_configured(hass) -> bool:
+    """Return whether Home Assistant's central backup encryption key exists."""
+    try:
+        return bool(async_get_manager(hass).config.data.create_backup.password)
+    except Exception:
+        return False
+
+
 class AdvancedBackupManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Configure a new independent backup profile."""
 
@@ -191,6 +200,12 @@ class AdvancedBackupManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_show_form(
                 step_id="user", data_schema=_start_schema({})
             )
+        if not _encryption_key_configured(self.hass):
+            return self.async_show_form(
+                step_id="user",
+                data_schema=_start_schema(user_input),
+                errors={"base": "encryption_key_required"},
+            )
         self._profile_data = user_input
         return await self.async_step_details()
 
@@ -199,6 +214,12 @@ class AdvancedBackupManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         addons = await _addons(self.hass)
         locations = await _locations(self.hass)
         if user_input is not None:
+            if not _encryption_key_configured(self.hass):
+                return self.async_show_form(
+                    step_id="details",
+                    data_schema=_details_schema(user_input, addons, locations),
+                    errors={"base": "encryption_key_required"},
+                )
             data = self._profile_data | user_input
             try:
                 data = validate_profile(data)
@@ -239,6 +260,12 @@ class AdvancedBackupManagerOptionsFlow(config_entries.OptionsFlow):
             return self.async_show_form(
                 step_id="init", data_schema=_start_schema(defaults)
             )
+        if not _encryption_key_configured(self.hass):
+            return self.async_show_form(
+                step_id="init",
+                data_schema=_start_schema(defaults),
+                errors={"base": "encryption_key_required"},
+            )
         self._original_data = defaults
         self._profile_data = defaults | user_input
         return await self.async_step_details()
@@ -248,6 +275,12 @@ class AdvancedBackupManagerOptionsFlow(config_entries.OptionsFlow):
         addons = await _addons(self.hass)
         locations = await _locations(self.hass)
         if user_input is not None:
+            if not _encryption_key_configured(self.hass):
+                return self.async_show_form(
+                    step_id="details",
+                    data_schema=_details_schema(user_input, addons, locations),
+                    errors={"base": "encryption_key_required"},
+                )
             data = self._profile_data | user_input
             # Encryption is integration-wide; old profile-specific values are
             # intentionally discarded when a profile is next saved.
