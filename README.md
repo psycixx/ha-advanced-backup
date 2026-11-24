@@ -2,6 +2,12 @@
 
 Independent scheduled Supervisor backup profiles for Home Assistant OS/Supervised.
 
+## Install through HACS
+1. Open **HACS → Integrations → ⋮ → Custom repositories**.
+2. Add `https://github.com/psycixx/ha-advanced-backup` with category **Integration**.
+3. Find the repository in HACS, select **Download**, and restart Home Assistant.
+4. Add the integration under **Settings → Devices & services**.
+
 ## Features
 - Daily, weekday, and calendar-anchored interval schedules.
 - Full or partial backups, add-on include/exclude, and optional database exclusion.
