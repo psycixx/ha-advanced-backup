@@ -29,9 +29,10 @@
           "addons": "Add-ons",
           "include_homeassistant": "Home Assistant einschließen",
           "exclude_database": "Datenbank ausschließen",
-          "password": "Passwort zur Backup-Verschlüsselung",
+          "password": "Eigener Verschlüsselungscode",
           "notify_success": "Bei Erfolg benachrichtigen",
-          "notify_failure": "Bei Fehler benachrichtigen"
+          "notify_failure": "Bei Fehler benachrichtigen",
+          "encryption_mode": "Backup-Verschlüsselung"
         },
         "data_description": {
           "time": "Die lokale Uhrzeit, zu der geplante Backups starten.",
@@ -44,9 +45,10 @@
           "addons": "Die Add-ons, die abhängig vom Auswahlmodus ein- oder ausgeschlossen werden.",
           "include_homeassistant": "Bei einem partiellen Backup die Home-Assistant-Konfiguration und Daten einschließen.",
           "exclude_database": "Die Recorder-Datenbank nicht sichern. Nur bei partiellen Backups verfügbar.",
-          "password": "Optionales Passwort, mit dem Supervisor das Backup verschlüsselt. Es wird nach dem Speichern nicht erneut angezeigt.",
+          "password": "Der gemeinsame Code wird von der Integration gespeichert und nicht in Profilattributen angezeigt. Bei Bedarf die Schaltfläche „Verschlüsselungscode anzeigen“ am Plan-Gerät verwenden.",
           "notify_success": "Bei erfolgreichem Abschluss dieses Profils eine dauerhafte Home-Assistant-Benachrichtigung erstellen.",
-          "notify_failure": "Wenn ein Lauf geprüft werden muss, eine dauerhafte Home-Assistant-Benachrichtigung erstellen."
+          "notify_failure": "Wenn ein Lauf geprüft werden muss, eine dauerhafte Home-Assistant-Benachrichtigung erstellen.",
+          "encryption_mode": "Einen Verschlüsselungscode erstellen, der für alle Backup-Pläne gilt. Generieren erstellt automatisch einen sicheren Code; Manuell erlaubt einen eigenen Code."
         }
       }
     },
@@ -93,7 +95,6 @@
           "addons": "Add-ons",
           "include_homeassistant": "Home Assistant einschließen",
           "exclude_database": "Datenbank ausschließen",
-          "password": "Neues Passwort zur Backup-Verschlüsselung",
           "notify_success": "Bei Erfolg benachrichtigen",
           "notify_failure": "Bei Fehler benachrichtigen"
         },
@@ -108,7 +109,6 @@
           "addons": "Die Add-ons, die abhängig vom Auswahlmodus ein- oder ausgeschlossen werden.",
           "include_homeassistant": "Bei einem partiellen Backup die Home-Assistant-Konfiguration und Daten einschließen.",
           "exclude_database": "Die Recorder-Datenbank nicht sichern. Nur bei partiellen Backups verfügbar.",
-          "password": "Leer lassen, um das gespeicherte Passwort beizubehalten.",
           "notify_success": "Bei erfolgreichem Abschluss dieses Profils eine dauerhafte Home-Assistant-Benachrichtigung erstellen.",
           "notify_failure": "Wenn ein Lauf geprüft werden muss, eine dauerhafte Home-Assistant-Benachrichtigung erstellen."
         }
