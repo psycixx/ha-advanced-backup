@@ -3,6 +3,7 @@ from __future__ import annotations
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.service import async_register_admin_service
 import voluptuous as vol
 from .const import *
 from .runner import BackupRunner
@@ -16,8 +17,23 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         await runner.async_run(call.data[ATTR_ENTRY_ID], manual=True)
     async def resolve(call):
         await runner.async_resolve_uncertain(call.data[ATTR_ENTRY_ID], call.data["outcome"])
-    hass.services.async_register(DOMAIN, SERVICE_RUN, run, schema=vol.Schema({vol.Required(ATTR_ENTRY_ID): cv.string}))
-    hass.services.async_register(DOMAIN, SERVICE_RESOLVE_UNCERTAIN, resolve, schema=vol.Schema({vol.Required(ATTR_ENTRY_ID): cv.string, vol.Required("outcome"): vol.In(["no_backup_created", "backup_exists"]) }))
+    async_register_admin_service(
+        hass,
+        DOMAIN,
+        SERVICE_RUN,
+        run,
+        schema=vol.Schema({vol.Required(ATTR_ENTRY_ID): cv.string}),
+    )
+    async_register_admin_service(
+        hass,
+        DOMAIN,
+        SERVICE_RESOLVE_UNCERTAIN,
+        resolve,
+        schema=vol.Schema({
+            vol.Required(ATTR_ENTRY_ID): cv.string,
+            vol.Required("outcome"): vol.In(["no_backup_created", "backup_exists"]),
+        }),
+    )
     return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
