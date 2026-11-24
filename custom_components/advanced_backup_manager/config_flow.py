@@ -217,7 +217,7 @@ class AdvancedBackupManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if not _encryption_key_configured(self.hass):
                 return self.async_show_form(
                     step_id="details",
-                    data_schema=_details_schema(user_input, addons, locations),
+                    data_schema=_details_schema(self._profile_data | user_input, addons, locations),
                     errors={"base": "encryption_key_required"},
                 )
             data = self._profile_data | user_input
@@ -278,7 +278,7 @@ class AdvancedBackupManagerOptionsFlow(config_entries.OptionsFlow):
             if not _encryption_key_configured(self.hass):
                 return self.async_show_form(
                     step_id="details",
-                    data_schema=_details_schema(user_input, addons, locations),
+                    data_schema=_details_schema(self._profile_data | user_input, addons, locations),
                     errors={"base": "encryption_key_required"},
                 )
             data = self._profile_data | user_input
