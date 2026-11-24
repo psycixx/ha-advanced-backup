@@ -72,6 +72,6 @@ class AdvancedBackupManagerOptionsFlow(config_entries.OptionsFlow):
             if not user_input.get(CONF_PASSWORD):
                 user_input[CONF_PASSWORD] = defaults.get(CONF_PASSWORD)
             try: data = validate_profile(user_input)
-            except ValueError as err: return self.async_show_form(step_id="init", data_schema=_schema(user_input, addons), errors={"base": str(err)})
+            except ValueError as err: return self.async_show_form(step_id="init", data_schema=_schema(user_input, addons, locations), errors={"base": str(err)})
             return self.async_create_entry(title="", data=data)
         return self.async_show_form(step_id="init", data_schema=_schema(defaults, addons, locations))
