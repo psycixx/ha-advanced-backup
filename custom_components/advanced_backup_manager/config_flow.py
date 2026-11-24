@@ -39,6 +39,7 @@ def _start_schema(defaults: dict[str, Any]) -> vol.Schema:
                 selector.SelectSelectorConfig(
                     options=[BACKUP_PARTIAL, BACKUP_FULL],
                     mode=selector.SelectSelectorMode.DROPDOWN,
+                    multiple=True,
                 )
             ),
             vol.Required(
@@ -69,7 +70,7 @@ def _details_schema(
         weekday_values = d(CONF_WEEKDAYS, [0])
         if isinstance(weekday_values, (int, str)):
             weekday_values = [weekday_values]
-        schema[vol.Required(CONF_WEEKDAYS, default=str(weekday_values[0]))] = (
+        schema[vol.Required(CONF_WEEKDAYS, default=[str(value) for value in weekday_values])] = (
             selector.SelectSelector(
                 selector.SelectSelectorConfig(
                     options=[
