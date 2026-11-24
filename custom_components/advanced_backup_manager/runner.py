@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime
 import logging
+import secrets
 from typing import Any
 
 from aiohasupervisor.models.backups import (
@@ -43,6 +44,7 @@ class BackupRunner:
         self.state = await self.store.async_load() or {"profiles": {}, "intent": None}
         self.state.setdefault("profiles", {})
         self.state.setdefault("intent", None)
+        self.state.setdefault("encryption_password", None)
 
     async def async_add_entry(self, entry: Any) -> None:
         self.entries[entry.entry_id] = entry
@@ -72,6 +74,32 @@ class BackupRunner:
 
     async def _save(self) -> None:
         await self.store.async_save(self.state)
+
+    @property
+    def has_encryption_password(self) -> bool:
+        """Return whether a shared backup encryption code is configured."""
+        return bool(self.state.get("encryption_password"))
+
+    async def async_configure_encryption(
+        self, mode: str, password: str | None = None
+    ) -> str:
+        """Set one shared encryption code for every backup profile."""
+        if mode == ENCRYPTION_GENERATE:
+            password = secrets.token_urlsafe(24)
+        elif mode == ENCRYPTION_MANUAL:
+            password = (password or "").strip()
+            if not password:
+                raise HomeAssistantError("Enter an encryption code")
+        else:
+            raise HomeAssistantError("Invalid encryption mode")
+
+        self.state["encryption_password"] = password
+        await self._save()
+        return password
+
+    def encryption_password(self) -> str | None:
+        """Return the shared code for explicit, administrator-requested display."""
+        return self.state.get("encryption_password")
 
     async def _async_time_tick(self, now: datetime) -> None:
         for entry_id, entry in tuple(self.entries.items()):
@@ -203,9 +231,7 @@ class BackupRunner:
             "location": data[CONF_LOCATION],
             "background": False,
         }
-        if password := data.get(CONF_PASSWORD):
-            common["password"] = password
-        if data[CONF_BACKUP_TYPE] == BACKUP_FULL:
+        # A legacy per-profile password is used only until a shared code exists.\n        password = self.encryption_password() or data.get(CONF_PASSWORD)\n        if password:\n            common["password"] = password\n        if data[CONF_BACKUP_TYPE] == BACKUP_FULL:
             return FullBackupOptions(
                 **common, homeassistant_exclude_database=False
             )
