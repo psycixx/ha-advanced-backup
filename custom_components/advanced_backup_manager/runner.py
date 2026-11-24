@@ -212,8 +212,12 @@ class BackupRunner:
         # Use Home Assistant's central backup encryption key. It is managed
         # exclusively by the native Backup integration and its emergency kit.
         password = async_get_manager(self.hass).config.data.create_backup.password
-        if password:
-            common["password"] = password
+        if not password:
+            raise HomeAssistantError(
+                "Configure the Home Assistant backup encryption key before "
+                "running an Advanced Backup Manager plan"
+            )
+        common["password"] = password
         if data[CONF_BACKUP_TYPE] == BACKUP_FULL:
             return FullBackupOptions(
                 **common, homeassistant_exclude_database=False
