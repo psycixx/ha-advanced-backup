@@ -47,7 +47,8 @@ class BackupRunner:
 
     async def async_add_entry(self, entry: Any) -> None:
         self.entries[entry.entry_id] = entry
-        self.state["profiles"].setdefault(
+        is_new_profile = entry.entry_id not in self.state["profiles"]
+        profile = self.state["profiles"].setdefault(
             entry.entry_id,
             {"records": [], "last_scheduled_date": None, "last_result": None},
         )
@@ -56,6 +57,18 @@ class BackupRunner:
             self._unsub = async_track_time_change(
                 self.hass, self._async_time_tick, second=0
             )
+        if is_new_profile:
+            # A single, explicit test run confirms the selected location and
+            # credentials. Mark today as handled to avoid a second scheduled run.
+            profile["last_scheduled_date"] = dt_util.now().date().isoformat()
+            await self._save()
+            persistent_notification.async_create(
+                self.hass,
+                "A one-time test backup is starting to verify this profile and "
+                "its selected storage location.",
+                title=f"Advanced Backup: {entry.title}",
+            )
+            self.hass.async_create_task(self.async_run(entry.entry_id, manual=True))
 
     async def async_remove_entry(self, entry_id: str) -> None:
         self.entries.pop(entry_id, None)
