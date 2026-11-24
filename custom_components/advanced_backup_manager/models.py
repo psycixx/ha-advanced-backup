@@ -19,7 +19,10 @@ def validate_profile(data: dict[str, Any]) -> dict[str, Any]:
     if schedule not in (SCHEDULE_DAILY, SCHEDULE_WEEKDAYS, SCHEDULE_INTERVAL):
         raise ValueError("invalid_schedule")
     if schedule == SCHEDULE_WEEKDAYS:
-        weekdays = set(result.get(CONF_WEEKDAYS, []))
+        try:
+            weekdays = {int(day) for day in result.get(CONF_WEEKDAYS, [])}
+        except (TypeError, ValueError) as err:
+            raise ValueError("invalid_weekdays") from err
         if not weekdays or not weekdays <= set(range(7)):
             raise ValueError("invalid_weekdays")
         result[CONF_WEEKDAYS] = sorted(weekdays)
@@ -43,8 +46,6 @@ def validate_profile(data: dict[str, Any]) -> dict[str, Any]:
     password = result.get(CONF_PASSWORD)
     if password is not None and not isinstance(password, str):
         raise ValueError("invalid_password")
-    # Omit an empty value so Supervisor creates an unprotected backup only when
-    # the profile deliberately has no password configured.
     result[CONF_PASSWORD] = password or None
     if result.get(CONF_ADDON_MODE, ADDON_INCLUDE) not in (ADDON_INCLUDE, ADDON_EXCLUDE):
         raise ValueError("invalid_addon_mode")
