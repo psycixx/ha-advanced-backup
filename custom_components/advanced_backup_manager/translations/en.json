@@ -17,7 +17,7 @@
       },
       "details": {
         "title": "Configure backup details",
-        "description": "Only settings relevant to the schedule selected in the previous step are shown.",
+        "description": "Only settings relevant to the schedule selected in the previous step are shown. After saving, a one-time test backup verifies the profile and selected storage location.",
         "data": {
           "time": "Time",
           "weekdays": "Weekday",
