@@ -5,6 +5,7 @@ from datetime import datetime
 import logging
 from typing import Any
 from aiohasupervisor.models.backups import AddonSet, FullBackupOptions, PartialBackupOptions
+from homeassistant.components import persistent_notification
 from homeassistant.components.hassio.handler import get_supervisor_client
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
@@ -96,6 +97,7 @@ class BackupRunner:
                 await self._save()
                 await self._async_apply_retention(entry_id, profile_data[CONF_RETENTION])
                 self.hass.bus.async_fire(EVENT_BACKUP_COMPLETED, {ATTR_ENTRY_ID: entry_id, ATTR_PROFILE_NAME: entry.title, ATTR_BACKUP_ID: details.slug, "manual": manual})
+                self._send_notification(profile_data, entry.title, f"Backup {details.slug} completed", success=True)
                 self._notify()
                 return details.slug
             except Exception as err:
@@ -103,6 +105,7 @@ class BackupRunner:
                 profile["last_result"] = {"status": "uncertain", "error": str(err), "at": dt_util.utcnow().isoformat()}
                 await self._save()
                 self.hass.bus.async_fire(EVENT_BACKUP_FAILED, {ATTR_ENTRY_ID: entry_id, ATTR_PROFILE_NAME: entry.title, "error": str(err), "uncertain": True})
+                self._send_notification(profile_data, entry.title, f"Backup needs review: {err}", success=False)
                 self._notify()
                 raise
 
@@ -111,7 +114,7 @@ class BackupRunner:
     ) -> FullBackupOptions | PartialBackupOptions:
         """Build validated options without making a side-effecting API call."""
         name = f"ABM {data[CONF_PROFILE_NAME]} {dt_util.now().strftime('%Y-%m-%d %H:%M')}"
-        common = {"name": name, "location": ".local", "background": False}
+        common = {"name": name, "location": data[CONF_LOCATION], "background": False}
         if password := data.get(CONF_PASSWORD):
             common["password"] = password
         if data[CONF_BACKUP_TYPE] == BACKUP_FULL:
@@ -167,6 +170,11 @@ class BackupRunner:
         self.state["intent"] = None
         self.profile_state(entry_id)["last_result"] = {"status": "resolved", "outcome": outcome, "at": dt_util.utcnow().isoformat()}
         await self._save(); self._notify()
+
+    def _send_notification(self, data: dict[str, Any], title: str, message: str, *, success: bool) -> None:
+        """Create an optional local notification without exposing secrets."""
+        if data.get(CONF_NOTIFY_SUCCESS if success else CONF_NOTIFY_FAILURE):
+            persistent_notification.async_create(self.hass, message, title=f"Advanced Backup: {title}")
 
     def _notify(self) -> None:
         for listener in tuple(self.listeners): listener()
