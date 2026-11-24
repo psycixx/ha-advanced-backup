@@ -29,9 +29,10 @@
           "addons": "Add-ons",
           "include_homeassistant": "Include Home Assistant",
           "exclude_database": "Exclude database",
-          "password": "Backup encryption password",
+          "password": "Custom encryption code",
           "notify_success": "Create notification on success",
-          "notify_failure": "Create notification on failure"
+          "notify_failure": "Create notification on failure",
+          "encryption_mode": "Backup encryption"
         },
         "data_description": {
           "time": "The local time at which scheduled backups start.",
@@ -44,9 +45,10 @@
           "addons": "The add-ons to include or exclude, according to the selection mode.",
           "include_homeassistant": "Include the Home Assistant configuration and data in a partial backup.",
           "exclude_database": "Do not include the recorder database. Available for partial backups only.",
-          "password": "Optional password used by Supervisor to encrypt the backup. It is never shown again after saving.",
+          "password": "The shared code is stored by the integration and is not shown in profile attributes. Use the “show encryption code” button on a plan device when you explicitly need to see it.",
           "notify_success": "Create a persistent Home Assistant notification when this profile finishes successfully.",
-          "notify_failure": "Create a persistent Home Assistant notification when a run needs attention."
+          "notify_failure": "Create a persistent Home Assistant notification when a run needs attention.",
+          "encryption_mode": "Create one encryption code shared by all backup plans. Generate creates a strong code automatically; Manual lets you enter your own code."
         }
       }
     },
@@ -93,7 +95,6 @@
           "addons": "Add-ons",
           "include_homeassistant": "Include Home Assistant",
           "exclude_database": "Exclude database",
-          "password": "New backup encryption password",
           "notify_success": "Create notification on success",
           "notify_failure": "Create notification on failure"
         },
@@ -108,7 +109,6 @@
           "addons": "The add-ons to include or exclude, according to the selection mode.",
           "include_homeassistant": "Include the Home Assistant configuration and data in a partial backup.",
           "exclude_database": "Do not include the recorder database. Available for partial backups only.",
-          "password": "Leave empty to retain the saved password.",
           "notify_success": "Create a persistent Home Assistant notification when this profile finishes successfully.",
           "notify_failure": "Create a persistent Home Assistant notification when a run needs attention."
         }
