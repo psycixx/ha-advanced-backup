@@ -195,7 +195,7 @@ class PlanScheduleSensor(_PlanSettingSensor):
             return f"daily at {profile.get(CONF_TIME)}"
         if profile.get(CONF_SCHEDULE) == SCHEDULE_WEEKDAYS:
             weekdays = ", ".join(str(day) for day in profile.get(CONF_WEEKDAYS, []))
-            return f"selected weekdays ${weekdays} at {profile.get(CONF_TIME)}"
+            return f"selected weekdays {weekdays} at {profile.get(CONF_TIME)}"
         return f"every {profile.get(CONF_INTERVAL_DAYS)} days at {profile.get(CONF_TIME)}"
 
 
