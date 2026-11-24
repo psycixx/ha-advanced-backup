@@ -17,7 +17,7 @@
       },
       "details": {
         "title": "Backup-Details konfigurieren",
-        "description": "Es werden nur die für den zuvor gewählten Zeitplan relevanten Einstellungen angezeigt. Nach dem Speichern prüft ein einmaliges Test-Backup das Profil und den gewählten Speicherort.",
+        "description": "Es werden nur die für den zuvor gewählten Zeitplan relevanten Einstellungen angezeigt. Nach dem Speichern wird empfohlen, das Profil mit der Schaltfläche „Jetzt sichern“ und dem gewählten Speicherort zu testen.",
         "data": {
           "time": "Uhrzeit",
           "weekdays": "Wochentag",
