@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Create backup profile",
-        "description": "Choose the basic profile settings first. The next step only shows the fields needed for the selected schedule.",
+        "description": "Choose the basic profile settings first. Encryption: every backup uses Home Assistant's central backup encryption key. Set it in Settings → System → Backups before the first run. The next step only shows the fields needed for the selected schedule.",
         "data": {
           "profile_name": "Profile name",
           "backup_type": "Backup type",
@@ -12,15 +12,15 @@
         "data_description": {
           "profile_name": "A recognizable name, such as “Daily NAS backup”.",
           "backup_type": "Full includes all supported data. Partial lets you choose Home Assistant and add-ons.",
-          "schedule": "Daily runs every day. Weekly runs on one selected weekday. Interval runs every N days from a chosen date."
+          "schedule": "Daily runs every day. Interval runs every N days from a chosen date, so it can cover weekly or monthly timing. Selected weekdays runs on one or more chosen days."
         }
       },
       "details": {
         "title": "Configure backup details",
-        "description": "Only settings relevant to the schedule selected in the previous step are shown. After saving, use the “Run backup now” button to test the profile and selected storage location. Backups use the encryption key configured in Settings → System → Backups; configure that key before running this plan.",
+        "description": "Only settings relevant to the selected schedule are shown. After saving, use the “Run backup now” button to test the profile and selected storage location. Every backup uses the central Home Assistant backup encryption key from Settings → System → Backups; configure it before running this plan.",
         "data": {
           "time": "Time",
-          "weekdays": "Weekday",
+          "weekdays": "Selected weekdays",
           "interval_days": "Every N days",
           "anchor_date": "Interval start date",
           "retention": "Backups to retain",
@@ -36,7 +36,7 @@
         },
         "data_description": {
           "time": "The local time at which scheduled backups start.",
-          "weekdays": "The one weekday on which the weekly backup starts.",
+          "weekdays": "Choose one or more days on which this plan should run.",
           "interval_days": "Number of days between interval backups.",
           "anchor_date": "The first date from which the interval is calculated.",
           "retention": "Only this number of confirmed backups made by this profile is kept. At least one confirmed backup is always retained.",
@@ -57,7 +57,7 @@
       "invalid_backup_type": "Select a valid backup type.",
       "invalid_time": "Enter a valid time.",
       "invalid_schedule": "Select a valid schedule.",
-      "invalid_weekdays": "Select exactly one weekday.",
+      "invalid_weekdays": "Select at least one weekday.",
       "invalid_interval": "Enter a valid interval and start date.",
       "invalid_retention": "Retention must be between 1 and 365.",
       "invalid_password": "The password must be text.",
@@ -78,7 +78,7 @@
         "description": "Only settings relevant to the selected schedule are shown.",
         "data": {
           "time": "Time",
-          "weekdays": "Weekday",
+          "weekdays": "Selected weekdays",
           "interval_days": "Every N days",
           "anchor_date": "Interval start date",
           "retention": "Backups to retain",
@@ -92,7 +92,7 @@
         },
         "data_description": {
           "time": "The local time at which scheduled backups start.",
-          "weekdays": "The one weekday on which the weekly backup starts.",
+          "weekdays": "Choose one or more days on which this plan should run.",
           "interval_days": "Number of days between interval backups.",
           "anchor_date": "The first date from which the interval is calculated.",
           "retention": "Only this number of confirmed backups made by this profile is kept. At least one confirmed backup is always retained.",
@@ -116,7 +116,7 @@
         "data_description": {
           "profile_name": "A recognizable name, such as “Daily NAS backup”.",
           "backup_type": "Full includes all supported data. Partial lets you choose Home Assistant and add-ons.",
-          "schedule": "Daily runs every day. Weekly runs on one selected weekday. Interval runs every N days from a chosen date."
+          "schedule": "Daily runs every day. Interval runs every N days from a chosen date, so it can cover weekly or monthly timing. Selected weekdays runs on one or more chosen days."
         }
       },
       "encryption": {
