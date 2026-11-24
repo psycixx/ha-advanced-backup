@@ -61,6 +61,7 @@ def _details_schema(
 ) -> vol.Schema:
     """Build only the fields relevant to the selected schedule."""
     d = lambda key, fallback=None: defaults.get(key, fallback)
+    is_full_backup = d(CONF_BACKUP_TYPE) == BACKUP_FULL
     schema: dict[Any, Any] = {
         vol.Required(CONF_TIME, default=d(CONF_TIME, "03:00")): selector.TimeSelector(),
     }
@@ -159,6 +160,18 @@ def _details_schema(
             ),
         }
     )
+    if is_full_backup:
+        partial_only = {
+            CONF_ADDON_MODE,
+            CONF_ADDONS,
+            CONF_INCLUDE_HOMEASSISTANT,
+            CONF_EXCLUDE_DATABASE,
+        }
+        schema = {
+            key: value
+            for key, value in schema.items()
+            if getattr(key, "schema", None) not in partial_only
+        }
     return vol.Schema(schema)
 
 
@@ -183,6 +196,24 @@ async def _addons(hass) -> list[tuple[str, str]]:
     except Exception:
         # The form remains usable; submission will still require a working Supervisor.
         return []
+
+
+def _encryption_schema() -> vol.Schema:
+    """Build the shared encryption code form."""
+    return vol.Schema(
+        {
+            vol.Required(
+                CONF_ENCRYPTION_MODE, default=ENCRYPTION_GENERATE
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[ENCRYPTION_GENERATE, ENCRYPTION_MANUAL]
+                )
+            ),
+            vol.Optional(CONF_PASSWORD, default=""): selector.TextSelector(
+                selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
+            ),
+        }
+    )
 
 
 class AdvancedBackupManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -240,6 +271,34 @@ class AdvancedBackupManagerOptionsFlow(config_entries.OptionsFlow):
     """Edit a backup profile through the same guided flow."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
+        """Choose whether to edit this plan or the shared encryption code."""
+        return self.async_show_menu(
+            step_id="init", menu_options=["profile", "encryption"]
+        )
+
+    async def async_step_encryption(
+        self, user_input: dict[str, Any] | None = None
+    ):
+        """Set or rotate the integration-wide encryption code."""
+        if user_input is not None:
+            try:
+                await self.hass.data[DOMAIN][DATA_RUNNER].async_configure_encryption(
+                    user_input[CONF_ENCRYPTION_MODE],
+                    user_input.get(CONF_PASSWORD),
+                )
+            except HomeAssistantError as err:
+                return self.async_show_form(
+                    step_id="encryption",
+                    data_schema=_encryption_schema(),
+                    errors={"base": str(err)},
+                )
+            return self.async_abort(reason="encryption_updated")
+
+        return self.async_show_form(
+            step_id="encryption", data_schema=_encryption_schema()
+        )
+
+    async def async_step_profile(self, user_input: dict[str, Any] | None = None):
         """Choose the profile basics and schedule first."""
         defaults = dict(self.config_entry.data) | dict(self.config_entry.options)
         if user_input is None:
