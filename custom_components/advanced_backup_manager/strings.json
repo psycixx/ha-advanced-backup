@@ -62,7 +62,8 @@
       "invalid_retention": "Retention must be between 1 and 365.",
       "invalid_password": "The password must be text.",
       "invalid_addon_mode": "Select a valid add-on selection mode.",
-      "database_requires_homeassistant": "The database requires Home Assistant to be included."
+      "database_requires_homeassistant": "The database requires Home Assistant to be included.",
+      "encryption_key_required": "Configure the central Home Assistant backup encryption key in Settings → System → Backups before saving a plan."
     }
   },
   "options": {
