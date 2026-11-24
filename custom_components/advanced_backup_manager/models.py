@@ -1,8 +1,11 @@
-"""Pure profile validation shared by config flow and runner."""
+""""Pure profile validation shared by config flow and runner."""
 from __future__ import annotations
+
 from datetime import date, time
 from typing import Any
+
 from .const import *
+
 
 def validate_profile(data: dict[str, Any]) -> dict[str, Any]:
     """Normalize and validate an MVP profile without Home Assistant imports."""
@@ -19,11 +22,14 @@ def validate_profile(data: dict[str, Any]) -> dict[str, Any]:
     if schedule not in (SCHEDULE_DAILY, SCHEDULE_WEEKDAYS, SCHEDULE_INTERVAL):
         raise ValueError("invalid_schedule")
     if schedule == SCHEDULE_WEEKDAYS:
+        weekday_values = result.get(CONF_WEEKDAYS, [])
+        if isinstance(weekday_values, (str, int)):
+            weekday_values = [weekday_values]
         try:
-            weekdays = {int(day) for day in result.get(CONF_WEEKDAYS, [])}
+            weekdays = {int(day) for day in weekday_values}
         except (TypeError, ValueError) as err:
             raise ValueError("invalid_weekdays") from err
-        if not weekdays or not weekdays <= set(range(7)):
+        if len(weekdays) != 1 or not weekdays <= set(range(7)):
             raise ValueError("invalid_weekdays")
         result[CONF_WEEKDAYS] = sorted(weekdays)
     if schedule == SCHEDULE_INTERVAL:
@@ -47,10 +53,16 @@ def validate_profile(data: dict[str, Any]) -> dict[str, Any]:
     if password is not None and not isinstance(password, str):
         raise ValueError("invalid_password")
     result[CONF_PASSWORD] = password or None
-    if result.get(CONF_ADDON_MODE, ADDON_INCLUDE) not in (ADDON_INCLUDE, ADDON_EXCLUDE):
+    if result.get(CONF_ADDON_MODE, ADDON_INCLUDE) not in (
+        ADDON_INCLUDE,
+        ADDON_EXCLUDE,
+    ):
         raise ValueError("invalid_addon_mode")
     if result[CONF_BACKUP_TYPE] == BACKUP_FULL:
         result[CONF_EXCLUDE_DATABASE] = False
-    elif not result.get(CONF_INCLUDE_HOMEASSISTANT, True) and result.get(CONF_EXCLUDE_DATABASE) is False:
+    elif (
+        not result.get(CONF_INCLUDE_HOMEASSISTANT, True)
+        and result.get(CONF_EXCLUDE_DATABASE) is False
+    ):
         raise ValueError("database_requires_homeassistant")
     return result
