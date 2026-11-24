@@ -2,36 +2,64 @@
   "config": {
     "step": {
       "user": {
-        "title": "Add backup profile",
-        "description": "Creates an independent local Supervisor backup profile.",
+        "title": "Create backup profile",
+        "description": "Choose the basic profile settings first. The next step only shows the fields needed for the selected schedule.",
         "data": {
           "profile_name": "Profile name",
           "backup_type": "Backup type",
-          "schedule": "Schedule",
+          "schedule": "Schedule"
+        },
+        "data_description": {
+          "profile_name": "A recognizable name, such as “Daily NAS backup”.",
+          "backup_type": "Full includes all supported data. Partial lets you choose Home Assistant and add-ons.",
+          "schedule": "Daily runs every day. Weekly runs on one selected weekday. Interval runs every N days from a chosen date."
+        }
+      },
+      "details": {
+        "title": "Configure backup details",
+        "description": "Only settings relevant to the schedule selected in the previous step are shown.",
+        "data": {
           "time": "Time",
-          "weekdays": "Weekdays",
+          "weekdays": "Weekday",
           "interval_days": "Every N days",
-          "anchor_date": "Interval anchor date",
+          "anchor_date": "Interval start date",
           "retention": "Backups to retain",
+          "location": "Backup location",
           "addon_mode": "Add-on selection mode",
           "addons": "Add-ons",
           "include_homeassistant": "Include Home Assistant",
           "exclude_database": "Exclude database",
           "password": "Backup encryption password",
-          "location": "Backup location",
           "notify_success": "Create notification on success",
           "notify_failure": "Create notification on failure"
+        },
+        "data_description": {
+          "time": "The local time at which scheduled backups start.",
+          "weekdays": "The one weekday on which the weekly backup starts.",
+          "interval_days": "Number of days between interval backups.",
+          "anchor_date": "The first date from which the interval is calculated.",
+          "retention": "Only this number of confirmed backups made by this profile is kept. At least one confirmed backup is always retained.",
+          "location": "Local storage or an active Supervisor backup mount, such as a NAS location.",
+          "addon_mode": "Include only the selected add-ons, or include all installed add-ons except the selected ones.",
+          "addons": "The add-ons to include or exclude, according to the selection mode.",
+          "include_homeassistant": "Include the Home Assistant configuration and data in a partial backup.",
+          "exclude_database": "Do not include the recorder database. Available for partial backups only.",
+          "password": "Optional password used by Supervisor to encrypt the backup. It is never shown again after saving.",
+          "notify_success": "Create a persistent Home Assistant notification when this profile finishes successfully.",
+          "notify_failure": "Create a persistent Home Assistant notification when a run needs attention."
         }
       }
     },
     "error": {
       "profile_name_required": "A profile name is required.",
+      "invalid_backup_type": "Select a valid backup type.",
       "invalid_time": "Enter a valid time.",
-      "invalid_schedule": "Invalid schedule.",
-      "invalid_weekdays": "Select at least one weekday.",
-      "invalid_interval": "Enter a valid interval and anchor date.",
+      "invalid_schedule": "Select a valid schedule.",
+      "invalid_weekdays": "Select exactly one weekday.",
+      "invalid_interval": "Enter a valid interval and start date.",
       "invalid_retention": "Retention must be between 1 and 365.",
       "invalid_password": "The password must be text.",
+      "invalid_addon_mode": "Select a valid add-on selection mode.",
       "database_requires_homeassistant": "The database requires Home Assistant to be included."
     }
   },
@@ -39,23 +67,50 @@
     "step": {
       "init": {
         "title": "Edit backup profile",
+        "description": "Change the basic profile settings. The next step adapts to the selected schedule.",
         "data": {
           "profile_name": "Profile name",
           "backup_type": "Backup type",
-          "schedule": "Schedule",
+          "schedule": "Schedule"
+        },
+        "data_description": {
+          "profile_name": "A recognizable name, such as “Daily NAS backup”.",
+          "backup_type": "Full includes all supported data. Partial lets you choose Home Assistant and add-ons.",
+          "schedule": "Daily runs every day. Weekly runs on one selected weekday. Interval runs every N days from a chosen date."
+        }
+      },
+      "details": {
+        "title": "Edit backup details",
+        "description": "Only settings relevant to the selected schedule are shown.",
+        "data": {
           "time": "Time",
-          "weekdays": "Weekdays",
+          "weekdays": "Weekday",
           "interval_days": "Every N days",
-          "anchor_date": "Interval anchor date",
+          "anchor_date": "Interval start date",
           "retention": "Backups to retain",
+          "location": "Backup location",
           "addon_mode": "Add-on selection mode",
           "addons": "Add-ons",
           "include_homeassistant": "Include Home Assistant",
           "exclude_database": "Exclude database",
-          "password": "New backup encryption password (blank retains it)",
-          "location": "Backup location",
+          "password": "New backup encryption password",
           "notify_success": "Create notification on success",
           "notify_failure": "Create notification on failure"
+        },
+        "data_description": {
+          "time": "The local time at which scheduled backups start.",
+          "weekdays": "The one weekday on which the weekly backup starts.",
+          "interval_days": "Number of days between interval backups.",
+          "anchor_date": "The first date from which the interval is calculated.",
+          "retention": "Only this number of confirmed backups made by this profile is kept. At least one confirmed backup is always retained.",
+          "location": "Local storage or an active Supervisor backup mount, such as a NAS location.",
+          "addon_mode": "Include only the selected add-ons, or include all installed add-ons except the selected ones.",
+          "addons": "The add-ons to include or exclude, according to the selection mode.",
+          "include_homeassistant": "Include the Home Assistant configuration and data in a partial backup.",
+          "exclude_database": "Do not include the recorder database. Available for partial backups only.",
+          "password": "Leave empty to retain the saved password.",
+          "notify_success": "Create a persistent Home Assistant notification when this profile finishes successfully.",
+          "notify_failure": "Create a persistent Home Assistant notification when a run needs attention."
         }
       }
     }
