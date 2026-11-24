@@ -5,6 +5,7 @@ from homeassistant.components.sensor import SensorEntity
 from homeassistant.core import callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .device import device_info
 from .const import (
     CONF_ADDON_MODE,
     CONF_ADDONS,
@@ -40,6 +41,7 @@ class ProfileStatusSensor(SensorEntity):
         self._entry = entry
         self._runner = hass.data[DOMAIN]["runner"]
         self._attr_unique_id = f"{entry.entry_id}_status"
+        self._attr_device_info = device_info(entry)
         self._unsub = self._runner.add_listener(self._handle_runner_update)
 
     @callback
