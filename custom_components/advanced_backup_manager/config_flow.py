@@ -256,8 +256,9 @@ class AdvancedBackupManagerOptionsFlow(config_entries.OptionsFlow):
         locations = await _locations(self.hass)
         if user_input is not None:
             data = self._profile_data | user_input
-            if not data.get(CONF_PASSWORD):
-                data[CONF_PASSWORD] = self._original_data.get(CONF_PASSWORD)
+            # Encryption is integration-wide; old profile-specific values are
+            # intentionally discarded when a profile is next saved.
+            data.pop(CONF_PASSWORD, None)
             try:
                 data = validate_profile(data)
             except ValueError as err:
