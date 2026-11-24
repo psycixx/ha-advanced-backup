@@ -155,7 +155,12 @@ class BackupRunner:
         for record in records[max(1, retention):]:
             try:
                 await self.client.backups.backup_info(record["slug"])
-                await self.client.backups.remove_backup(\n                    record["slug"],\n                    options=RemoveBackupOptions(location={record.get("location", ".local")}),\n                )
+                await self.client.backups.remove_backup(
+                    record["slug"],
+                    options=RemoveBackupOptions(
+                        location={record.get("location", ".local")}
+                    ),
+                )
             except Exception as err:
                 _LOGGER.warning("Retention left backup %s untouched: %s", record["slug"], err)
                 continue
