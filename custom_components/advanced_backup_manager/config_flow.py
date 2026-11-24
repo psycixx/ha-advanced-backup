@@ -39,7 +39,6 @@ def _start_schema(defaults: dict[str, Any]) -> vol.Schema:
                 selector.SelectSelectorConfig(
                     options=[BACKUP_PARTIAL, BACKUP_FULL],
                     mode=selector.SelectSelectorMode.DROPDOWN,
-                    multiple=True,
                 )
             ),
             vol.Required(
@@ -78,6 +77,7 @@ def _details_schema(
                         for index, name in enumerate(_WEEKDAY_NAMES)
                     ],
                     mode=selector.SelectSelectorMode.DROPDOWN,
+                    multiple=True,
                 )
             )
         )
