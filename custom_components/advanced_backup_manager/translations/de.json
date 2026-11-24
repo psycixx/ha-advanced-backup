@@ -62,7 +62,8 @@
       "invalid_retention": "Die Aufbewahrung muss zwischen 1 und 365 liegen.",
       "invalid_password": "Das Passwort muss Text sein.",
       "invalid_addon_mode": "Einen gültigen Auswahlmodus für Add-ons auswählen.",
-      "database_requires_homeassistant": "Die Datenbank kann nur mit Home Assistant eingeschlossen werden."
+      "database_requires_homeassistant": "Die Datenbank kann nur mit Home Assistant eingeschlossen werden.",
+      "encryption_key_required": "Vor dem Speichern eines Plans den zentralen Home-Assistant-Verschlüsselungscode unter Einstellungen → System → Backups einrichten."
     }
   },
   "options": {
