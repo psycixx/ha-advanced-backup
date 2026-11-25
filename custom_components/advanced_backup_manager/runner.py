@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
+from aiohasupervisor.exceptions import SupervisorBadRequestError
 import logging
 from typing import Any
 
@@ -114,6 +115,8 @@ class BackupRunner:
         await self.store.async_save(self.state)
 
     async def _async_time_tick(self, now: datetime) -> None:
+        if self.lock.locked() or self.state.get("intent"):
+            return
         for entry_id, entry in tuple(self.entries.items()):
             state = self.profile_state(entry_id)
             if is_due(
@@ -124,15 +127,20 @@ class BackupRunner:
                         entry, now.date().isoformat(), notify=True
                     )
                     continue
-                # A busy runner deliberately drops a scheduled trigger, rather than queueing it.
-                if not self.lock.locked():
-                    self.hass.async_create_task(
-                        self.async_run(
-                            entry_id,
-                            manual=False,
-                            scheduled_date=now.date().isoformat(),
-                        )
+                retry = state.get("freeze_retry", {})
+                if retry.get("date") == now.date().isoformat():
+                    if dt_util.utcnow() < datetime.fromisoformat(retry["next_at"]):
+                        continue
+                if self.lock.locked() or self.state.get("intent"):
+                    return
+                try:
+                    await self.async_run(
+                        entry_id, manual=False, scheduled_date=now.date().isoformat()
                     )
+                except Exception as err:
+                    _LOGGER.warning("Scheduled backup %s did not complete: %s", entry.title, err)
+                # At most one execution per tick; other due plans are reconsidered next minute.
+                return
 
     async def async_run(
         self, entry_id: str, *, manual: bool, scheduled_date: str | None = None
@@ -153,6 +161,8 @@ class BackupRunner:
         async with self.lock:
             profile = self.profile_state(entry_id)
             profile_data = self._profile_data(entry)
+            if scheduled_date and profile.get("last_scheduled_date") == scheduled_date:
+                raise HomeAssistantError("Scheduled backup already handled")
             if not self._encryption_key():
                 await self._record_encryption_configuration_error(
                     entry, scheduled_date, notify=True
@@ -169,7 +179,35 @@ class BackupRunner:
             }
             await self._save()
             try:
-                backup = await self._async_create(backup_options)
+                try:
+                    backup = await self._async_create(backup_options)
+                except SupervisorBadRequestError as err:
+                    if "blocked from execution, system is not running - freeze" not in str(err):
+                        raise
+                    # This request was explicitly refused before execution. An
+                    # unrelated backup may still be running in Supervisor.
+                    self.state["intent"] = None
+                    if scheduled_date:
+                        retry = profile.get("freeze_retry", {})
+                        attempts = (retry.get("attempts", 0)
+                                    if retry.get("date") == scheduled_date else 0) + 1
+                        profile["freeze_retry"] = {
+                            "date": scheduled_date,
+                            "attempts": attempts,
+                            "next_at": (dt_util.utcnow() + timedelta(minutes=5)).isoformat(),
+                        }
+                        if attempts >= 3:
+                            profile["last_scheduled_date"] = scheduled_date
+                    profile["last_result"] = {
+                        "status": "deferred" if scheduled_date and attempts < 3 else "failed",
+                        "error": str(err),
+                        "at": dt_util.utcnow().isoformat(),
+                    }
+                    await self._save()
+                    self._notify()
+                    if not scheduled_date or attempts >= 3:
+                        self._send_notification(profile_data, entry.title, str(err), success=False)
+                    raise
                 if not backup.slug:
                     raise HomeAssistantError(
                         "Supervisor returned no completed backup ID"
@@ -186,6 +224,7 @@ class BackupRunner:
                     "type": str(details.type),
                     "location": profile_data[CONF_LOCATION],
                 }
+                profile.pop("freeze_retry", None)
                 profile["records"].append(record)
                 profile["last_result"] = {
                     "status": "success",
@@ -197,6 +236,8 @@ class BackupRunner:
                 self.state["intent"] = None
                 await self._save()
             except Exception as err:
+                if self.state.get("intent") is None:
+                    raise
                 # Intent stays durable: request may have reached Supervisor even when response failed.
                 profile["last_result"] = {
                     "status": "uncertain",
@@ -322,17 +363,23 @@ class BackupRunner:
             await self._save()
 
     async def async_resolve_uncertain(self, entry_id: str, outcome: str) -> None:
-        intent = self.state.get("intent")
-        if not intent or intent["entry_id"] != entry_id:
-            raise HomeAssistantError("No uncertain execution exists for this profile")
-        self.state["intent"] = None
-        self.profile_state(entry_id)["last_result"] = {
-            "status": "resolved",
-            "outcome": outcome,
-            "at": dt_util.utcnow().isoformat(),
-        }
-        await self._save()
-        self._notify()
+        if self.lock.locked():
+            raise HomeAssistantError("A backup execution is still running")
+        async with self.lock:
+            intent = self.state.get("intent")
+            if not intent or intent["entry_id"] != entry_id:
+                raise HomeAssistantError("No uncertain execution exists for this profile")
+            profile = self.profile_state(entry_id)
+            if outcome == "backup_exists" and intent.get("scheduled_date"):
+                profile["last_scheduled_date"] = intent["scheduled_date"]
+            self.state["intent"] = None
+            profile["last_result"] = {
+                "status": "resolved",
+                "outcome": outcome,
+                "at": dt_util.utcnow().isoformat(),
+            }
+            await self._save()
+            self._notify()
 
     def _send_notification(
         self, data: dict[str, Any], title: str, message: str, *, success: bool
