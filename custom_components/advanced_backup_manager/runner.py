@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from aiohasupervisor.exceptions import SupervisorBadRequestError
 import logging
 from typing import Any
+from uuid import uuid4
 
 from aiohasupervisor.models.backups import (
     AddonSet,
@@ -115,8 +116,16 @@ class BackupRunner:
         await self.store.async_save(self.state)
 
     async def _async_time_tick(self, now: datetime) -> None:
-        if self.lock.locked() or self.state.get("intent"):
+        if self.lock.locked():
             return
+        if self.state.get("intent"):
+            async with self.lock:
+                try:
+                    await self._async_reconcile()
+                except Exception:
+                    _LOGGER.debug("Could not reconcile pending backup", exc_info=True)
+            if self.state.get("intent"):
+                return
         for entry_id, entry in tuple(self.entries.items()):
             state = self.profile_state(entry_id)
             if is_due(
@@ -176,6 +185,8 @@ class BackupRunner:
                 "entry_id": entry_id,
                 "started_at": dt_util.utcnow().isoformat(),
                 "scheduled_date": scheduled_date,
+                "name": backup_options.name,
+                "location": profile_data[CONF_LOCATION],
             }
             await self._save()
             try:
@@ -290,7 +301,7 @@ class BackupRunner:
         """Build validated options without making a side-effecting API call."""
         name = (
             f"ABM {data[CONF_PROFILE_NAME]} "
-            f"{dt_util.now().strftime('%Y-%m-%d %H:%M')}"
+            f"{dt_util.now().strftime('%Y-%m-%d %H:%M')} {uuid4().hex[:12]}"
         )
         common = {
             "name": name,
@@ -361,6 +372,42 @@ class BackupRunner:
                 continue
             records.remove(record)
             await self._save()
+
+    async def _async_reconcile(self) -> bool:
+        """Recover only an exact, uniquely named backup from a durable intent."""
+        intent = self.state.get("intent")
+        if not intent or not intent.get("name") or not intent.get("location"):
+            return False  # Legacy intents require explicit confirmation.
+        entry_id = intent["entry_id"]
+        if entry_id not in self.state["profiles"]:
+            return False
+        backups = await self.client.backups.list()
+        matches = [backup for backup in backups if backup.name == intent["name"]]
+        if len(matches) != 1:
+            return False
+        details = await self.client.backups.backup_info(matches[0].slug)
+        if details.name != intent["name"] or intent["location"] not in details.location_attributes:
+            return False
+        profile = self.profile_state(entry_id)
+        if not any(record["slug"] == details.slug for record in profile["records"]):
+            profile["records"].append({
+                "slug": details.slug,
+                "created_at": details.date.isoformat(),
+                "type": str(details.type),
+                "location": intent["location"],
+            })
+        if intent.get("scheduled_date"):
+            profile["last_scheduled_date"] = intent["scheduled_date"]
+        profile.pop("freeze_retry", None)
+        profile["last_result"] = {
+            "status": "success",
+            "backup_id": details.slug,
+            "at": dt_util.utcnow().isoformat(),
+        }
+        self.state["intent"] = None
+        await self._save()
+        self._notify()
+        return True
 
     async def async_resolve_uncertain(self, entry_id: str, outcome: str) -> None:
         if self.lock.locked():
