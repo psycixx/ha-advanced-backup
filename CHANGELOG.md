@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.2.14 — 2026-11-26
+
+### Improved
+
+- Short archive filenames without random suffixes:
+  `HA_<ProfileName>_<YYYY-MM-DD>_<HH-MM>.tar`.
+- Additional runs using the same filename and storage target receive `_02`,
+  `_03`, etc. Reservations persist before backup creation and survive restarts.
+- Success notifications show the profile, full/partial backup type, and local
+  creation time instead of the technical backup ID. German and English text
+  follows Home Assistant's configured language.
+- Updated manifest and project metadata to 0.2.14.
+
+### Validation and upgrade
+
+Automated tests cover numbering across restarts and sanitized/case-insensitive
+name collisions, persisted intent, SDK serialization, and success notifications.
+Restart Home Assistant after updating. Existing archives keep their names;
+internal backup identifiers, recovery, retention, and encryption are unchanged.
+No live backup or restoration is performed by these tests. The upstream Core
+local-app archive issue documented below remains outside this ABM change.
+
 ## 0.2.13 — 2026-11-26
 
 ### Added

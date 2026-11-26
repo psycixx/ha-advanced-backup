@@ -17,12 +17,26 @@ beim Entschlüsseln von apps_local ist im README mit upstream Links dokumentiert
 
 ## Dateinamen
 
-Neue Archive heißen HA_<Profil>_<JJJJ-MM-TT>_<HH-MM>_<UUID>.tar. Lokaler Zeitpunkt
-und UUID werden einmal pro Lauf erzeugt; derselbe Zeitpunkt und ein UUID-Präfix
-stehen im internen Namen. Profilnamen werden für portable Dateinamen bereinigt.
-Eine UUID unterscheidet auch Starts in derselben Minute oder Profile mit gleichem
-bereinigtem Namen. Die Option filename wird als PurePath an beide Backup-Typen
-und Speicherarten übergeben. Vorhandene Archive werden nicht umbenannt.
+Neue Archive heißen HA_<Profil>_<JJJJ-MM-TT>_<HH-MM>.tar. Weitere Reservierungen
+für denselben bereinigten Namen und dasselbe Ziel erhalten _02, _03 usw. Die
+Zähler stehen global unter filename_counters und werden gemeinsam mit dem Intent
+vor dem Supervisor-Aufruf gespeichert. Alte Zustände erhalten ein leeres Mapping;
+bestehende Intents bleiben gültig. Reservierungen werden nach Fehlern oder nach
+Aufbewahrungs-Löschungen nicht zurückgesetzt. Fehlversuche können Nummernlücken
+hinterlassen. Groß-/Kleinschreibung wird bei der Kollisionserkennung ignoriert.
+
+Der interne Name behält seine UUID-Kennung zur Wiederaufnahme. Die Option filename
+wird als PurePath an beide Backup-Typen und Speicherarten übergeben. Vorhandene
+Archive werden nicht umbenannt. Supervisor lehnt bereits vorhandene Zieldateien
+ab; ABM überschreibt auch bei einem zurückgespielten alten Zähler keine Archive.
+
+## Erfolgsmeldungen
+
+Nach bestätigtem Erfolg zeigt die Meldung Profil, Sicherungstyp und lokale
+Erstellungszeit aus dem bestätigten Backup. Technische IDs werden nur intern für
+Ereignisse, Statusattribute und Wiederaufnahme verwendet. Die konfigurierte
+HA-Sprache bestimmt Deutsch oder den englischen Standardtext. Deaktivierte
+Erfolgsmeldungen bleiben deaktiviert; Fehlerbenachrichtigungen bleiben unverändert.
 
 ## Ausführung und Wiederaufnahme
 
