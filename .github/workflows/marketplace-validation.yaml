@@ -35,6 +35,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+      - name: Install Supervisor SDK used by Home Assistant 2026.11
+        run: python -m pip install aiohasupervisor==0.8.1
       - name: Compile integration
         run: python -m compileall -q custom_components
       - name: Run unit tests

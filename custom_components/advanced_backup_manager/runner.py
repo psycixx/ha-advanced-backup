@@ -9,7 +9,6 @@ from typing import Any
 from uuid import uuid4
 
 from aiohasupervisor.models.backups import (
-    AddonSet,
     FullBackupOptions,
     PartialBackupOptions,
     RemoveBackupOptions,
@@ -24,6 +23,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import *
+from .filenames import backup_filename
 from .schedule import is_due
 
 _LOGGER = logging.getLogger(__name__)
@@ -186,6 +186,7 @@ class BackupRunner:
                 "started_at": dt_util.utcnow().isoformat(),
                 "scheduled_date": scheduled_date,
                 "name": backup_options.name,
+                "filename": str(backup_options.filename),
                 "location": profile_data[CONF_LOCATION],
             }
             await self._save()
@@ -299,12 +300,15 @@ class BackupRunner:
         self, data: dict[str, Any]
     ) -> FullBackupOptions | PartialBackupOptions:
         """Build validated options without making a side-effecting API call."""
+        now = dt_util.now()
+        run_id = uuid4().hex
         name = (
             f"ABM {data[CONF_PROFILE_NAME]} "
-            f"{dt_util.now().strftime('%Y-%m-%d %H:%M')} {uuid4().hex[:12]}"
+            f"{now.strftime('%Y-%m-%d %H:%M')} {run_id[:12]}"
         )
         common = {
             "name": name,
+            "filename": backup_filename(data[CONF_PROFILE_NAME], now, run_id),
             "location": data[CONF_LOCATION],
             "background": False,
         }
