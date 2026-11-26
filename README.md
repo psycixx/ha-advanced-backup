@@ -25,12 +25,18 @@ For Home Assistant versions before 2026.11, add the same URL as a custom reposit
 - Per-profile retention: only confirmed backups created by that profile are pruned, and the newest confirmed one is always retained.
 - Choose local storage or any active Supervisor backup mount, including Network Storage Manager locations.
 - All plans use Home Assistant's central backup encryption key.
-- Optional English system-wide success/failure notifications.
+- Optional system-wide success/failure notifications. Success messages show the
+  profile, backup type and local creation time in German or English, following
+  Home Assistant's configured language, without technical backup IDs.
 - Global serialization and a deliberate manual-resolution lock for uncertain runs.
 - Readable filenames for new full and partial archives:
-  `HA_<ProfileName>_<YYYY-MM-DD>_<HH-MM>_<unique-run-id>.tar`.
-  Profile names are sanitized, timestamps use Home Assistant's local time, and
-  a unique suffix separates runs in the same minute. Existing archives keep their names.
+  `HA_<ProfileName>_<YYYY-MM-DD>_<HH-MM>.tar`.
+  Further reservations for the same name and target receive `_02`, `_03`, etc.
+  Profile names are sanitized and timestamps use Home Assistant's local time.
+  Counters survive restarts and distinguish names that sanitize to the same text,
+  including case differences on network storage. Failed attempts can leave gaps
+  in numbering. Existing archives keep their names. Supervisor rejects existing
+  target files rather than overwriting them, including files unknown to ABM.
 
 ## Install and configure
 
