@@ -1,32 +1,27 @@
 # Testnachweis
 
-## Enthaltene lokale Tests
+## Automatisierte Prüfungen
 
-`python -m unittest discover -s tests -v` prüft reine, deterministische Einheiten:
+python -m unittest discover -s tests -v prüft Profile, Planung, Dateinamen mit
+lokaler Zeit und problematischen Profilnamen, mehrere Starts in derselben Minute,
+Optionen für Voll-/Teilbackups an lokale und Netzwerkziele, Speicherung des Intents
+vor dem Supervisor-Aufruf, alte Intents ohne Dateiname und Aufbewahrung nach Slug
+und Speicherziel.
 
-- Profilvalidierung einschließlich der MariaDB-Regel für Teilbackups;
-- tägliche, Wochentags- und kalenderverankerte N-Tages-Planung;
-- keine doppelte Ausführung am selben Datum und kein Nachholen vor der Uhrzeit.
+Runner-Tests ersetzen Home-Assistant-Dienste und Supervisor-Aufrufe. GitHub Actions
+installiert aiohasupervisor 0.8.1 unter Python 3.13. Ein zusätzlicher Test prüft
+dessen tatsächliche JSON-Serialisierung für beide Backup-Typen. Ohne installiertes
+SDK laufen die übrigen Tests mit Ersatzobjekten; der SDK-Test wird übersprungen.
+compileall prüft die Integrationssyntax. HACS und Hassfest laufen separat in CI.
 
-Zusätzlich prüft `compileall` die Python-Syntax aller Integrationsdateien. Diese
-Tests benötigen keine Home-Assistant-Instanz und führen keine Backups aus.
+## Grenzen
 
-**Ausführungsstand:** In dieser Windows-Arbeitsumgebung war beim ersten Versuch
-kein Python-Interpreter im `PATH` verfügbar. Die Ausführung wird daher erst nach
-dem Push durch die beigefügte GitHub-Action nachgewiesen; es wird nicht behauptet,
-dass hier lokal Tests gelaufen sind.
+Diese Tests erzeugen keine echten Backups und stellen nichts wieder her.
+Die Prüfung der vier am 26.11.2026 bereitgestellten Archive betraf ABM 0.2.12,
+nicht die neue Dateinamen-Funktion. Optionen für lokale und Netzwerkziele werden
+automatisiert geprüft. Echte Schreibvorgänge auf beiden Speicherarten und Neustarts
+während eines Backups sind damit nicht nachgewiesen.
 
-## Vor HACS-Freigabe auf separater HA-OS-Testinstanz erforderlich
-
-1. Konfigurations- und Optionsdialog gegen die konkrete HA-Version testen.
-2. Teilbackup mit Datenbank-Ausschluss: Detail muss `homeassistant_exclude_database=true` zeigen.
-3. Vollbackup erzeugen und MariaDB-Einschluss bestätigen.
-4. Ein verschlüsseltes Teil- und Vollbackup erzeugen; Wiederherstellungsdialog
-   muss das Passwort verlangen und mit falschem Passwort scheitern.
-5. Include- und Exclude-Modus testen, einschließlich eines später installierten Add-ons.
-6. Zwei Profile gleichzeitig starten: eines muss ohne Warteschlange abgelehnt werden.
-7. Während eines Aufrufs HA neu starten: Sperre und `resolve_uncertain` testen.
-8. Mehr Erfolge als Aufbewahrung erzeugen; nur bekannte eigene lokale Slugs dürfen gelöscht werden.
-9. Sommer-/Winterzeit und Neustart nahe Termin testen.
-
-Keiner dieser Tests darf auf einer produktiven Instanz erfolgen.
+Für einen ergänzenden Test auf einer separaten HA-Testinstanz: Voll-/Teilbackups
+auf beiden Zielarten erzeugen, zweimal in derselben Minute starten und danach
+Wiederaufnahme/Aufbewahrung beobachten. Produktive Backups werden nicht verändert.

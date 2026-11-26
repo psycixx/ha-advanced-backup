@@ -1,70 +1,60 @@
 # Architektur
 
-## Profile
+## Sicherungsumfang und Verschlüsselung
 
-Jeder Konfigurationseintrag ist ein Profil. Ein Profil hat Typ, lokale Uhrzeit,
-Kalenderregel, Add-on-Auswahl, Datenbankoption und Aufbewahrung. Änderungen
-erfolgen im nativen Optionsdialog. Bei `exclude` wird die aktuelle Supervisor-
-Inventarliste unmittelbar vor jedem Teilbackup gelesen: neu installierte Add-ons
-werden daher automatisch eingeschlossen, sofern sie nicht explizit ausgeschlossen
-sind.
+Jeder Konfigurationseintrag ist ein Profil. Vollbackups verwenden die reguläre
+Supervisor-Funktion full_backup mit Datenbank-Einschluss. Teilbackups übergeben
+App-Auswahl, HA-Auswahl und Datenbankoption an partial_backup. Separate Ordner
+werden bei Teilbackups derzeit nicht angefordert. Im Exclude-Modus wird die
+installierte App-Liste vor jedem Lauf neu gelesen. MariaDB als App und die
+HA-Datenbankoption sind getrennte Bestandteile des Sicherungsumfangs.
 
-Ein Vollbackup ruft `BackupsClient.full_backup()` auf und enthält zwangsläufig
-alles, auch MariaDB. Ein Teilbackup ruft `partial_backup()` auf und übergibt
-`homeassistant_exclude_database=True`, wenn die Datenbank ausgeschlossen ist.
+ABM verwendet ausschließlich den zentralen Backup-Schlüssel von Home Assistant.
+Er wird an Supervisor übergeben und nicht als eigener Profilschlüssel gespeichert.
+Fehlt er, wird der Lauf vor dem Supervisor-Aufruf abgelehnt. Schlüsselwerte werden
+nicht in Ereignissen, Sensoren oder Meldungen ausgegeben. Der bekannte Core-Fehler
+beim Entschlüsseln von apps_local ist im README mit upstream Links dokumentiert.
 
-## Verschlüsselung
+## Dateinamen
 
-Ein optionales Passwort pro Profil wird als `FullBackupOptions.password` bzw.
-`PartialBackupOptions.password` an den Supervisor übergeben. Damit setzt der
-Supervisor das geschützte Backup-Format um; beim Wiederherstellen ist dasselbe
-Passwort erforderlich. Es wird weder geloggt noch über Events oder Sensoren
-offengelegt. Weil geplante Backups nicht nach einem interaktiven Geheimnis fragen
-können, speichert HA das Passwort im Config-Entry unter `.storage`. Diese Datei
-ist nicht automatisch ein Geheimnisspeicher und kein Ersatz für den Schutz des
-HA-Konfigurationslaufwerks. In einem Optionsdialog wird
-das bestehende Passwort nie zurückgegeben; ein leeres Feld behält es bei.
+Neue Archive heißen HA_<Profil>_<JJJJ-MM-TT>_<HH-MM>_<UUID>.tar. Lokaler Zeitpunkt
+und UUID werden einmal pro Lauf erzeugt; derselbe Zeitpunkt und ein UUID-Präfix
+stehen im internen Namen. Profilnamen werden für portable Dateinamen bereinigt.
+Eine UUID unterscheidet auch Starts in derselben Minute oder Profile mit gleichem
+bereinigtem Namen. Die Option filename wird als PurePath an beide Backup-Typen
+und Speicherarten übergeben. Vorhandene Archive werden nicht umbenannt.
 
-## Ausführung und Absturzschutz
+## Ausführung und Wiederaufnahme
 
-Alle Profile teilen einen `asyncio.Lock`. Ist er belegt, wird ein manueller Start
-abgelehnt; geplante Starts werden nicht nachgereicht. Das vermeidet eine
-unbegrenzte Warteschlange. Der Supervisor-Aufruf verwendet `background=False`.
-Erst ein nichtleerer Rückgabe-Slug **und** ein erfolgreicher `backup_info`-Abruf
-gelten als Erfolg.
+Alle Profile teilen ein asyncio.Lock. Ein manueller Start während eines ABM-Laufs
+wird abgelehnt. Fällige geplante Profile werden bei späteren Minuten-Ticks erneut
+berücksichtigt. Pro Tick beginnt höchstens ein Lauf.
 
-Vor dem Aufruf wird `intent` in `.storage/advanced_backup_manager.state`
-geschrieben. Bei jedem Fehler bleibt dieses Intent bestehen und sperrt alle
-weiteren Ausführungen — auch nach einem Neustart. Der Administrator muss den
-Supervisor kontrollieren und mit `resolve_uncertain` bestätigen. Das MVP kann
-einen möglicherweise entstandenen, aber nicht identifizierten Backup-Slug nicht
-sicher einem Profil zuordnen und löscht ihn deshalb nie.
+Vor dem Supervisor-Aufruf wird ein Intent mit Profil, internem Namen, Dateiname,
+Ziel und geplantem Datum gespeichert. Der Aufruf wartet mit background=False.
+Erst ein Rückgabe-Slug und ein Detailabruf mit dem erwarteten Ziel gelten als Erfolg.
 
-## Planung
+Bei unbekanntem Ausgang bleibt der Intent erhalten. Der nächste Tick sucht genau
+ein Backup mit identischem internem Namen und bestätigt dessen Ziel. Das gilt auch
+für alte Intents ohne Dateiname. Bleibt die Zuordnung unklar, ist eine manuelle
+Auflösung erforderlich. Explizite Freeze-Ablehnungen vor der Ausführung führen bei
+geplanten Läufen zu höchstens drei Versuchen im Abstand von fünf Minuten.
 
-Ein Zeit-Listener bewertet die lokale HA-Zeit minutengenau. Ein Datum wird nur
-einmal ausgeführt. Intervallregeln rechnen `(heutiges lokales Datum - Stichtag) %
-N`; manuelle Starts verändern diese Verankerung nicht. Nachgeholt wird maximal am
-aktuellen Kalendertag: frühere, verpasste Tage werden nicht rückwirkend erzeugt.
-Bei doppelten DST-Zeitpunkten verhindert `last_scheduled_date` die zweite
-Ausführung; bei nicht existierender Uhrzeit im Frühling erfolgt keine künstliche
-Nachholung.
+## Planung und Aufbewahrung
 
-## Aufbewahrung
+Die Planung verwendet lokale HA-Zeit und feste Kalendertage. Bestätigte geplante
+Termine werden nicht doppelt ausgeführt. Frühere Tage werden nicht nachgeholt;
+neue Profile holen bereits verstrichene Termine desselben Tages ebenfalls nicht nach.
 
-Nur nach bestätigtem Erfolg wird der Slug in der persistenten, profilspezifischen
-Liste erfasst. Nach einem neuen Erfolg werden ausschließlich darin enthaltene,
-ältere Backups gelöscht. Vor dem Löschen wird erneut `backup_info` geprüft. Das
-jüngste eigene Backup bleibt immer erhalten. Der MVP setzt `location=.local` und
-löscht daher keine Kopien auf Netzspeichern oder Cloud-Zielen.
+Nach Erfolg werden nur ältere, vom Profil aufgezeichnete Backups anhand ihres
+Slugs am gespeicherten Ziel gelöscht. Das jüngste bestätigte eigene Backup bleibt
+erhalten. Dateinamen spielen bei Wiederaufnahme und Aufbewahrung keine Rolle.
 
 ## API-Grundlage
 
-Gegen Home Assistant Core **2026.11.3** geprüft: die Core-Services erzeugen
-`FullBackupOptions` bzw. `PartialBackupOptions` über den authentifizierten
-`get_supervisor_client`, warten auf den Client-Aufruf und liefern den Slug zurück.
-Die Supervisor-Dokumentation beschreibt `background=false` als wartend und
-`GET /backups/<slug>/info` als Detailprüfung.
+Core 2026.11.0 und 2026.11.3 verwenden aiohasupervisor 0.8.1. FullBackupOptions
+unterstützt filename als PurePath; PartialBackupOptions erbt diese Option.
+Supervisor 2026.11.0 akzeptiert sie für beide Backup-Typen.
 
-- https://github.com/home-assistant/core/blob/2026.11.3/homeassistant/components/hassio/services.py
-- https://contributors.home-assistant.io/apps/supervisor-api/backups/
+- https://github.com/home-assistant-libs/python-supervisor-client/tree/aa4eec3403cb942b3acf1c87c41be1359bf02877
+- https://github.com/home-assistant/supervisor/blob/2026.11.0/supervisor/api/backups.py

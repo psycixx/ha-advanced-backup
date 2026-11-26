@@ -2,6 +2,9 @@
 
 Independent scheduled Supervisor backup profiles for Home Assistant OS/Supervised.
 
+Requires Home Assistant Core 2026.11.0 or newer. Filename support is validated
+against its bundled `aiohasupervisor` 0.8.1 and Supervisor 2026.11.0.
+
 > [!IMPORTANT]
 > **Restart Home Assistant after installing or updating this integration in HACS.** New custom integrations and their configuration flows are loaded only during Home Assistant startup. Do not try to add the integration before the restart has completed.
 
@@ -24,6 +27,10 @@ For Home Assistant versions before 2026.11, add the same URL as a custom reposit
 - All plans use Home Assistant's central backup encryption key.
 - Optional English system-wide success/failure notifications.
 - Global serialization and a deliberate manual-resolution lock for uncertain runs.
+- Readable filenames for new full and partial archives:
+  `HA_<ProfileName>_<YYYY-MM-DD>_<HH-MM>_<unique-run-id>.tar`.
+  Profile names are sanitized, timestamps use Home Assistant's local time, and
+  a unique suffix separates runs in the same minute. Existing archives keep their names.
 
 ## Install and configure
 
@@ -37,3 +44,20 @@ For Home Assistant versions before 2026.11, add the same URL as a custom reposit
 ## Safety
 
 A possibly side-effecting Supervisor call first records a durable intent. If its outcome is uncertain, all further profile runs stop until an administrator inspects the Supervisor and calls `advanced_backup_manager.resolve_uncertain`. The central encryption key is managed by Home Assistant and is not exposed by this integration. Test restoration before production use.
+
+## Known Home Assistant backup issue
+
+Core 2026.11.3 and earlier affected versions can leave the local-app source
+archive (`apps_local.tar.gz`, previously `addons_local.tar.gz`) encrypted in a
+decrypted download even though `backup.json` says `protected: false`. The same
+upstream naming mismatch can omit that component during per-agent encryption.
+Local app sources are separate from installed apps' individual backup archives.
+ABM delegates backup creation to Supervisor; this release does not fix Core's
+download/encryption code.
+
+The correction was merged in [Core PR #193806](https://github.com/home-assistant/core/pull/193806)
+and is included in 2026.12.0b0. As of 2026-11-26, it is not in the latest stable
+2026.11.3 release. See [Core issue #187111](https://github.com/home-assistant/core/issues/187111)
+and [ABM tracking issue #6](https://github.com/psycixx/ha-advanced-backup/issues/6).
+After upgrading to a version containing the fix, download the backup decrypted
+again; upgrading does not rewrite earlier downloads.
