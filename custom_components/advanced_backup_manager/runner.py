@@ -24,7 +24,6 @@ from homeassistant.util import dt as dt_util
 
 from .const import *
 from .filenames import backup_filename
-from .messages import success_notification
 from .schedule import is_due
 
 _LOGGER = logging.getLogger(__name__)
@@ -37,7 +36,7 @@ class BackupRunner:
         self.hass = hass
         self.client = get_supervisor_client(hass)
         self.store = Store(hass, STORAGE_VERSION, STORAGE_KEY)
-        self.state: dict[str, Any] = {"profiles": {}, "intent": None, "filename_counters": {}}
+        self.state: dict[str, Any] = {"profiles": {}, "intent": None}
         self.entries: dict[str, Any] = {}
         self.lock = asyncio.Lock()
         self._unsub = None
@@ -47,7 +46,6 @@ class BackupRunner:
         self.state = await self.store.async_load() or {"profiles": {}, "intent": None}
         self.state.setdefault("profiles", {})
         self.state.setdefault("intent", None)
-        self.state.setdefault("filename_counters", {})
 
     async def async_add_entry(self, entry: Any) -> None:
         self.entries[entry.entry_id] = entry
@@ -289,7 +287,12 @@ class BackupRunner:
                     "manual": manual,
                 },
             )
-            self._send_success_notification(profile_data, entry.title, details.date)
+            self._send_notification(
+                profile_data,
+                entry.title,
+                f"Backup {details.slug} completed",
+                success=True,
+            )
             self._notify()
             return details.slug
 
@@ -305,6 +308,7 @@ class BackupRunner:
         )
         common = {
             "name": name,
+            "filename": backup_filename(data[CONF_PROFILE_NAME], now, run_id),
             "location": data[CONF_LOCATION],
             "background": False,
         }
@@ -317,9 +321,6 @@ class BackupRunner:
                 "running an Advanced Backup Manager plan"
             )
         common["password"] = password
-        common["filename"] = self._reserve_filename(
-            data[CONF_PROFILE_NAME], now, data[CONF_LOCATION]
-        )
         if data[CONF_BACKUP_TYPE] == BACKUP_FULL:
             return FullBackupOptions(
                 **common, homeassistant_exclude_database=False
@@ -350,21 +351,6 @@ class BackupRunner:
         if isinstance(options, PartialBackupOptions):
             return await self.client.backups.partial_backup(options)
         return await self.client.backups.full_backup(options)
-
-    def _reserve_filename(self, profile_name: str, now: datetime, location: str):
-        """Reserve names across profiles and restarts before the backup request.
-
-        The caller saves these counters with the intent before contacting
-        Supervisor. Keep old reservations even after retention removes archives.
-        Case folding also handles case-insensitive network storage. Supervisor
-        rejects an existing target file; ABM never overwrites or renames it.
-        """
-        base_name = backup_filename(profile_name, now)
-        key = f"{location}\n{base_name}".casefold()
-        counters = self.state.setdefault("filename_counters", {})
-        sequence = counters.get(key, 0) + 1
-        counters[key] = sequence
-        return backup_filename(profile_name, now, sequence)
 
     @staticmethod
     def _profile_data(entry: Any) -> dict[str, Any]:
@@ -454,18 +440,6 @@ class BackupRunner:
             persistent_notification.async_create(
                 self.hass, message, title=f"Advanced Backup: {title}"
             )
-
-    def _send_success_notification(
-        self, data: dict[str, Any], profile_name: str, created_at: datetime
-    ) -> None:
-        """Show profile, backup type and local creation time after confirmation."""
-        if not data.get(CONF_NOTIFY_SUCCESS):
-            return
-        language = getattr(getattr(self.hass, "config", None), "language", "en") or "en"
-        title, message = success_notification(
-            profile_name, data[CONF_BACKUP_TYPE], dt_util.as_local(created_at), language
-        )
-        persistent_notification.async_create(self.hass, message, title=title)
 
     def _notify(self) -> None:
         """Refresh listeners without allowing UI failures to affect backups."""

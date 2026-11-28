@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.2.15 — 2026-11-28
+
+### Compatibility
+
+- Supports Home Assistant Core 2026.10.0 and later. The test matrix validates
+  the bundled `aiohasupervisor` 0.6.0 and 0.8.1 APIs.
+- Backup creation, storage targets (local and active Supervisor mounts),
+  central encryption-key access, retention, and recovery use the same API
+  surface on both supported versions.
+- Readable custom archive filenames work with both tested Supervisor APIs.
+- Home Assistant Cloud Backup is not exposed as an ABM target in this release.
+  Profiles can use local storage and active Supervisor backup mounts (including
+  NAS locations); use Home Assistant's native Backup interface for Cloud Backup.
+
+### Upgrade
+
+Restart Home Assistant after updating. Existing profiles, backup IDs, storage
+locations, retention records, and encryption settings are unchanged. No live
+backup or restoration is performed by automated tests.
+
 ## 0.2.14 — 2026-11-26
 
 ### Improved

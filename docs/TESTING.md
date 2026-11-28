@@ -8,11 +8,6 @@ Optionen für Voll-/Teilbackups an lokale und Netzwerkziele, Speicherung des Int
 vor dem Supervisor-Aufruf, alte Intents ohne Dateiname und Aufbewahrung nach Slug
 und Speicherziel.
 
-Zusätzliche Tests für 0.2.14 prüfen fortlaufende Dateinamen nach Neustarts,
-Kollisionen durch Bereinigung und Groß-/Kleinschreibung, getrennte Speicherziele,
-alte Zustände ohne Zähler, Abbruch vor dem Backup bei fehlgeschlagener Speicherung
-sowie deutsche und englische Erfolgsmeldungen mit lokaler Erstellungszeit.
-
 Runner-Tests ersetzen Home-Assistant-Dienste und Supervisor-Aufrufe. GitHub Actions
 installiert aiohasupervisor 0.8.1 unter Python 3.13. Ein zusätzlicher Test prüft
 dessen tatsächliche JSON-Serialisierung für beide Backup-Typen. Ohne installiertes

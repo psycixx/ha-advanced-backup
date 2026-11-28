@@ -2,8 +2,9 @@
 
 Independent scheduled Supervisor backup profiles for Home Assistant OS/Supervised.
 
-Requires Home Assistant Core 2026.11.0 or newer. Filename support is validated
-against its bundled `aiohasupervisor` 0.8.1 and Supervisor 2026.11.0.
+Requires Home Assistant Core 2026.10.0 or newer. Core backup functionality,
+including readable archive filenames, is validated against its bundled
+`aiohasupervisor` 0.6.0 (Core 2026.10) and 0.8.1 (Core 2026.11).
 
 > [!IMPORTANT]
 > **Restart Home Assistant after installing or updating this integration in HACS.** New custom integrations and their configuration flows are loaded only during Home Assistant startup. Do not try to add the integration before the restart has completed.
@@ -46,6 +47,14 @@ For Home Assistant versions before 2026.11, add the same URL as a custom reposit
 4. Choose an active backup location, a schedule, contents, and **Backups to retain**.
 5. Use **Daily**, **Interval**, or **Selected weekdays**. The latter accepts one or more weekdays.
 6. Use **Run backup now** to test the profile and confirm the backup under **Settings → System → Backups** before relying on schedules.
+
+### Home Assistant Cloud limitation
+
+This version presents local storage and active Supervisor backup mounts (such
+as NAS locations configured through Network Storage Manager). It does not yet
+offer Home Assistant Cloud Backup as a selectable target, even when Cloud Backup
+is enabled. A manually migrated profile using that internal target is not a
+supported configuration; use the native Backup interface for Cloud Backup.
 
 ## Safety
 

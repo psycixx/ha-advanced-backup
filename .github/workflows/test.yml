@@ -5,11 +5,15 @@ on:
 jobs:
   unit:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        aiohasupervisor: ['0.6.0', '0.8.1']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: python -m pip install aiohasupervisor==0.8.1
+      - run: python -m pip install aiohasupervisor==${{ matrix.aiohasupervisor }}
       - run: python -m unittest discover -s tests -v
       - run: python -m compileall -q custom_components

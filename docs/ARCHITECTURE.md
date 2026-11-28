@@ -66,9 +66,16 @@ erhalten. Dateinamen spielen bei Wiederaufnahme und Aufbewahrung keine Rolle.
 
 ## API-Grundlage
 
-Core 2026.11.0 und 2026.11.3 verwenden aiohasupervisor 0.8.1. FullBackupOptions
-unterstützt filename als PurePath; PartialBackupOptions erbt diese Option.
-Supervisor 2026.11.0 akzeptiert sie für beide Backup-Typen.
+Core 2026.10 verwendet aiohasupervisor 0.6.0, Core 2026.11 aiohasupervisor
+0.8.1. Backup-Modelle, verwendete Backup-Methoden und der Zugriff auf den
+zentralen Verschlüsselungsschlüssel sind in der Integration kompatibel. Beide
+SDK-Versionen enthalten `filename` für Voll- und Teilbackups. Die Mount-Auswahl
+liest nur Name, Nutzung und Zustand; das in älteren Antworten fehlende
+Laufwerkstyp-Feld wird nicht benötigt.
+
+ABM listet ausschließlich `.local` und aktive Supervisor-Mounts als Ziele. Der
+interne Cloud-Backup-Speicher wird nicht in der Auswahl angeboten und ist daher
+kein unterstütztes ABM-Ziel.
 
 - https://github.com/home-assistant-libs/python-supervisor-client/tree/aa4eec3403cb942b3acf1c87c41be1359bf02877
 - https://github.com/home-assistant/supervisor/blob/2026.11.0/supervisor/api/backups.py
